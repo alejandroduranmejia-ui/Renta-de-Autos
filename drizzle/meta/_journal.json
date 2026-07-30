@@ -15,6 +15,13 @@
       "when": 1785379240990,
       "tag": "0001_private_storage_bucket",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1785379649596,
+      "tag": "0002_public_photos_bucket",
+      "breakpoints": true
     }
   ]
 }

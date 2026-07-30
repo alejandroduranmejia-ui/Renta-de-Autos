@@ -29,3 +29,20 @@ export async function getSignedUrl(path: string, ttlSeconds: number) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+// Bucket público — solo para fotos de vehículos, nunca para documentos de identidad o del
+// vehículo (blueprint.md §4).
+export async function uploadPublicPhoto(
+  path: string,
+  file: Buffer,
+  contentType: string,
+) {
+  const { error } = await serviceClient()
+    .storage.from("vehicle-photos")
+    .upload(path, file, { contentType, upsert: false });
+  if (error) throw error;
+  const { data } = serviceClient()
+    .storage.from("vehicle-photos")
+    .getPublicUrl(path);
+  return data.publicUrl;
+}
