@@ -16,6 +16,8 @@ const envSchema = z.object({
   // Requeridas desde el paso 10 en adelante (Stripe Connect) — no antes.
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Requerida desde el paso 14 en adelante (cron de expiración de holds) — no antes.
+  CRON_SECRET: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);

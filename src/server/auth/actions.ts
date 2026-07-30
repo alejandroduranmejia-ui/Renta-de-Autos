@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { checkAndIncrement } from "@/lib/rate-limit";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const credentialsSchema = z.object({
@@ -19,6 +20,13 @@ async function originFromHeaders() {
   return `${proto}://${host}`;
 }
 
+// Sin IP real de cliente detrás de un proxy (dev local), cae a una clave compartida — en
+// producción, Vercel siempre entrega `x-forwarded-for` (blueprint.md §14).
+async function clientIp() {
+  const headersList = await headers();
+  return headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+}
+
 export async function signInWithPasswordAction(formData: FormData) {
   const parsed = credentialsSchema.safeParse({
     email: formData.get("email"),
@@ -28,6 +36,18 @@ export async function signInWithPasswordAction(formData: FormData) {
   if (!parsed.success) {
     redirect(
       `/iniciar-sesion?error=datos_invalidos&next=${encodeURIComponent((formData.get("next") as string) || "/")}`,
+    );
+  }
+
+  // Server Actions no exponen un código de estado HTTP propio (siempre viajan en el protocolo de
+  // acciones de Next.js) — el límite de tasa se aplica igual con el mismo mecanismo
+  // (`checkAndIncrement`, testeado en tests/integration/rate-limit.test.ts) y se comunica con la
+  // misma convención de error+redirect que el resto de esta acción (blueprint.md §14).
+  const ip = await clientIp();
+  const limit = await checkAndIncrement(`login:${ip}`, 10, 60);
+  if (!limit.allowed) {
+    redirect(
+      `/iniciar-sesion?error=demasiados_intentos&next=${encodeURIComponent(parsed.data.next || "/")}`,
     );
   }
 
@@ -55,6 +75,12 @@ export async function signUpWithPasswordAction(formData: FormData) {
   });
   if (!parsed.success) {
     redirect("/registro?error=datos_invalidos");
+  }
+
+  const ip = await clientIp();
+  const limit = await checkAndIncrement(`registro:${ip}`, 5, 60);
+  if (!limit.allowed) {
+    redirect("/registro?error=demasiados_intentos");
   }
 
   const supabase = await createSupabaseServerClient();
