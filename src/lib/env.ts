@@ -18,6 +18,10 @@ const envSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
   // Requerida desde el paso 14 en adelante (cron de expiración de holds) — no antes.
   CRON_SECRET: z.string().min(1),
+  // Opcional a propósito desde el paso 15: sin una cuenta real de Sentry, el SDK no debe
+  // bloquear el build ni el gate — simplemente no reporta nada (blueprint.md regla 11, "nunca
+  // depender duro de un servicio de terceros").
+  SENTRY_DSN: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);
