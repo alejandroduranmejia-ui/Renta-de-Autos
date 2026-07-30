@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { paymentEvents } from "@/lib/db/schema";
 import { env } from "@/lib/env";
 import { stripe } from "@/lib/stripe";
+import { syncCheckoutSessionCore } from "@/server/payments/checkout";
 import { syncConnectedAccountCore } from "@/server/payments/connect";
 
 // Verifica la firma contra el cuerpo CRUDO antes de parsear nada — Next.js App Router entrega el
@@ -46,6 +47,10 @@ export async function POST(request: NextRequest) {
   if (event.type === "account.updated") {
     const accountId = (event.data.object as Stripe.Account).id;
     await syncConnectedAccountCore(accountId);
+  }
+  if (event.type === "checkout.session.completed") {
+    const sessionId = (event.data.object as Stripe.Checkout.Session).id;
+    await syncCheckoutSessionCore(sessionId);
   }
 
   return NextResponse.json({ received: true });
