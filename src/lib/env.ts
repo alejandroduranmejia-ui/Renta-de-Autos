@@ -9,6 +9,10 @@ const envSchema = z.object({
   // Requeridas desde el paso 3 en adelante (esquema de base de datos) — no antes.
   DATABASE_URL: z.string().min(1),
   DIRECT_DATABASE_URL: z.string().min(1),
+  // Requeridas desde el paso 4 en adelante (autenticación) — no antes.
+  NEXT_PUBLIC_SUPABASE_URL: z.string().min(1),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);

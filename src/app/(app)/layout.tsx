@@ -1,8 +1,10 @@
-// Shell protegido — la llamada real a requireUser() se agrega en el paso 4 (blueprint.md §9).
-// Este paso (2) solo dibuja el shell: topbar + sidebar.
-export default function AppLayout({
+import { requireUser } from "@/server/auth/guards";
+
+export default async function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  await requireUser();
+
   return (
     <div className="flex min-h-full flex-1">
       <aside className="hidden w-56 shrink-0 border-r border-border p-4 sm:block">
