@@ -6,8 +6,9 @@ import { z } from "zod";
 // en el paso que las necesita, no antes — así el gate de este paso nunca falla por una
 // variable que ningún código todavía usa (blueprint.md §9, regla 9).
 const envSchema = z.object({
-  DATABASE_URL: z.string().optional(),
-  DIRECT_DATABASE_URL: z.string().optional(),
+  // Requeridas desde el paso 3 en adelante (esquema de base de datos) — no antes.
+  DATABASE_URL: z.string().min(1),
+  DIRECT_DATABASE_URL: z.string().min(1),
 });
 
 export const env = envSchema.parse(process.env);
