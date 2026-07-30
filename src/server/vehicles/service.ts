@@ -7,7 +7,7 @@ import {
   vehicles,
 } from "@/lib/db/schema";
 import { uploadPrivate, uploadPublicPhoto } from "@/lib/storage";
-import { NotFoundError } from "@/server/errors";
+import { ForbiddenError, NotFoundError } from "@/server/errors";
 
 // Capa de servicio — sin `cookies()`/`headers()`, recibe un actor ya resuelto (blueprint.md §9,
 // "Toda mutación real vive en service.ts").
@@ -202,4 +202,30 @@ export async function activateVehicleCore(
     .set({ status: "active" })
     .where(eq(vehicles.id, vehicle.id));
   return { ok: true };
+}
+
+export async function reviewVehicleDocumentCore(
+  actor: Actor & { isAdmin: boolean },
+  params: { documentId: string; decision: "approved" | "rejected" },
+) {
+  if (!actor.isAdmin) {
+    throw new ForbiddenError(
+      "Solo un admin puede revisar documentos de vehículo.",
+    );
+  }
+  const [updated] = await db
+    .update(vehicleDocuments)
+    .set({
+      status: params.decision,
+      reviewedBy: actor.id,
+      reviewedAt: new Date(),
+    })
+    .where(
+      and(
+        eq(vehicleDocuments.id, params.documentId),
+        eq(vehicleDocuments.status, "pending"),
+      ),
+    )
+    .returning();
+  return updated ?? null;
 }

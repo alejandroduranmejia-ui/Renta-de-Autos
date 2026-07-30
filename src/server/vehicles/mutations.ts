@@ -1,14 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { requireUser } from "@/server/auth/guards";
+import { requireAdmin, requireUser } from "@/server/auth/guards";
 import {
   activateVehicleCore,
   addVehicleDocumentCore,
   addVehiclePhotoCore,
   createVehicleCore,
   deactivateVehicleCore,
+  reviewVehicleDocumentCore,
   updateVehicleCore,
 } from "@/server/vehicles/service";
 
@@ -109,4 +111,19 @@ export async function updateVehicle(formData: FormData) {
   });
   await updateVehicleCore(actor, vehicleId, parsed);
   redirect(`/mis-vehiculos/${vehicleId}/editar?guardado=1`);
+}
+
+const reviewDocumentSchema = z.object({
+  documentId: z.string().uuid(),
+  decision: z.enum(["approved", "rejected"]),
+});
+
+export async function reviewVehicleDocument(formData: FormData) {
+  const admin = await requireAdmin();
+  const parsed = reviewDocumentSchema.parse({
+    documentId: formData.get("documentId"),
+    decision: formData.get("decision"),
+  });
+  await reviewVehicleDocumentCore(admin, parsed);
+  revalidatePath("/admin/vehiculos");
 }

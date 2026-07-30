@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin, requireUser } from "@/server/auth/guards";
@@ -52,4 +53,7 @@ export async function reviewVerification(formData: FormData) {
   });
 
   await reviewVerificationCore(admin, parsed);
+  // Sin esto, el listado de /admin/verificaciones seguiría mostrando la fila como pendiente
+  // hasta un refresh manual — Next.js no revalida rutas después de una Server Action por sí solo.
+  revalidatePath("/admin/verificaciones");
 }
