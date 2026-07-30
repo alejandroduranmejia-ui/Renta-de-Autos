@@ -8,6 +8,13 @@
       "when": 1785376150887,
       "tag": "0000_stale_wendigo",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1785379240990,
+      "tag": "0001_private_storage_bucket",
+      "breakpoints": true
     }
   ]
 }
