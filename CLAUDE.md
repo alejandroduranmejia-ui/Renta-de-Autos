@@ -65,13 +65,20 @@ en el mismo árbol de `src/server/*`, nunca por un `fetch` de cliente a una ruta
    tree-shaking.
 5. **Valida en el borde.** Cada Server Action y route handler parsea su entrada con Zod antes de tocar
    lógica de negocio. Ningún input sin validar llega a `src/server/`.
-6. **Autoriza después de validar, antes de trabajar.** `requireUser()`/`requireAdmin()` primero, luego
-   el `authorize(actor, action, resource)` específico del recurso. Cruzar el límite de otro usuario
+6. **Toda mutación real vive en `src/server/<dominio>/service.ts`, como función pura sin `cookies()`/
+   `headers()`, que recibe un actor ya resuelto.** El archivo `mutations.ts` (con `"use server"`) es
+   solo el wrapper: resuelve el actor vía `requireUser()`/`requireAdmin()`, parsea el `FormData`, y
+   delega. Esto es lo que hace la lógica testeable con Vitest — un test no tiene el request context
+   de Next.js que `cookies()` necesita (verificado en vivo: llamar una Server Action directo desde
+   un test de Vitest revienta ahí, no en la lógica de negocio).
+7. **Autoriza después de validar, antes de trabajar.** `requireUser()`/`requireAdmin()` primero, luego
+   la verificación específica del recurso — y repítela dentro de `service.ts` como segunda capa,
+   nunca confiando en que el wrapper fue la única verificación. Cruzar el límite de otro usuario
    devuelve 404, nunca 403.
-7. **Montos en centavos, siempre enteros.** Ni un `float` para dinero en todo el repo.
-8. **Los webhooks de Stripe vuelven a consultar la API** antes de escribir estado — nunca confían en el
+8. **Montos en centavos, siempre enteros.** Ni un `float` para dinero en todo el repo.
+9. **Los webhooks de Stripe vuelven a consultar la API** antes de escribir estado — nunca confían en el
    payload del evento.
-9. **Sin dependencia nueva sin una razón en el mensaje de commit.** Revisa la librería estándar o una
+10. **Sin dependencia nueva sin una razón en el mensaje de commit.** Revisa la librería estándar o una
    dependencia existente primero.
 
 ## Design system
