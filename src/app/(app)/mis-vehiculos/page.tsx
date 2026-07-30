@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { vehicles } from "@/lib/db/schema";
+import { connectedAccounts, vehicles } from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
+import { startConnectOnboarding } from "@/server/payments/mutations";
 
 export default async function MisVehiculosPage() {
   const actor = await requireUser();
@@ -10,6 +11,11 @@ export default async function MisVehiculosPage() {
     .select()
     .from(vehicles)
     .where(eq(vehicles.ownerId, actor.id));
+  const [connected] = await db
+    .select()
+    .from(connectedAccounts)
+    .where(eq(connectedAccounts.ownerId, actor.id))
+    .limit(1);
 
   return (
     <div className="flex flex-col gap-6">
@@ -22,6 +28,23 @@ export default async function MisVehiculosPage() {
           Publicar vehículo
         </Link>
       </div>
+
+      {!connected?.payoutsEnabled && (
+        <form
+          action={startConnectOnboarding}
+          className="rounded-xl border border-border px-4 py-3"
+        >
+          <p className="mb-2 text-sm text-muted-foreground">
+            Para recibir pagos, primero configura tu cuenta de pagos.
+          </p>
+          <button
+            type="submit"
+            className="rounded-lg border border-input px-3 py-1.5 text-sm"
+          >
+            Configurar pagos
+          </button>
+        </form>
+      )}
 
       {own.length === 0 ? (
         <p className="text-muted-foreground">

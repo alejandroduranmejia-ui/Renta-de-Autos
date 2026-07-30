@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  connectedAccounts,
   identityVerifications,
   vehicleDocuments,
   vehiclePhotos,
@@ -195,6 +196,22 @@ export async function activateVehicleCore(
   );
   if (!hasAllApproved) {
     return { ok: false, reason: "documents_missing_or_not_approved" };
+  }
+
+  // Condición agregada en el paso 10 (E2-T5), sobre la misma función — sin reescribirla
+  // (blueprint.md §9, comentario original de esta función).
+  const [connected] = await db
+    .select()
+    .from(connectedAccounts)
+    .where(
+      and(
+        eq(connectedAccounts.ownerId, actor.id),
+        eq(connectedAccounts.payoutsEnabled, true),
+      ),
+    )
+    .limit(1);
+  if (!connected) {
+    return { ok: false, reason: "payouts_not_enabled" };
   }
 
   await db
