@@ -1,5 +1,5 @@
 {
-  "name": "scaffold-tmp",
+  "name": "vehicle-rental-marketplace",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -7,7 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "biome check",
-    "format": "biome format --write"
+    "format": "biome format --write",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@sentry/nextjs": "10.69.0",
@@ -19,8 +26,8 @@
     "lucide-react": "^1.27.0",
     "next": "16.2.12",
     "radix-ui": "^1.6.7",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-hook-form": "7.83.0",
     "resend": "6.18.1",
     "shadcn": "^4.16.0",

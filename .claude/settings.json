@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm install:*)",
+      "Bash(pnpm test:*)",
+      "Bash(pnpm exec tsc:*)",
+      "Bash(pnpm exec biome:*)",
+      "Bash(pnpm exec playwright:*)",
+      "Bash(pnpm exec playwright install:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm start)",
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm db:generate)",
+      "Bash(pnpm db:migrate)",
+      "Bash(pnpm db:seed)",
+      "Bash(pnpm dlx supabase:*)",
+      "Bash(supabase start)",
+      "Bash(supabase stop)",
+      "Bash(supabase init)",
+      "Bash(stripe listen:*)",
+      "Bash(stripe trigger:*)",
+      "Bash(curl -s -o /dev/null -w * localhost:*)",
+      "Bash(curl -s -o /dev/null -w * https://*/api/health)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git tag:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(node -v)",
+      "Bash(pnpm -v)"
+    ],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Bash(git push:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(supabase db reset:*)",
+      "Bash(rm -rf:*)"
+    ]
+  }
+}
