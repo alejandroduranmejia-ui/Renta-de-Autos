@@ -13,7 +13,13 @@ export default defineConfig({
   webServer: {
     command: "pnpm dev",
     url: "http://localhost:3000",
-    reuseExistingServer: true,
+    // Reutilizar un servidor local ya arriba ahorra tiempo — pero un servidor viejo que quedó
+    // corriendo desde una sesión anterior sirve HTML compilado antes de los últimos cambios, y
+    // un test que compara contra ese HTML falla (o peor, pasa) por una razón que no tiene nada
+    // que ver con el código actual (verificado en vivo: un `next dev` de una prueba anterior
+    // seguía en el puerto 3000 y el test de la clase "dark" comparó contra el layout viejo). CI
+    // nunca debe reutilizar nada.
+    reuseExistingServer: !process.env.CI,
     timeout: 60000,
   },
 });
