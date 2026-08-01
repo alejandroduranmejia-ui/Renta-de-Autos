@@ -50,6 +50,9 @@ jobs:
       - name: Apply migrations
         run: pnpm db:migrate
 
+      - name: Seed database
+        run: pnpm db:seed
+
       - run: pnpm test
 
       - name: Install Playwright browsers
