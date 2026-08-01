@@ -46,3 +46,10 @@ export async function uploadPublicPhoto(
     .getPublicUrl(path);
   return data.publicUrl;
 }
+
+export function getPublicPhotoUrl(path: string) {
+  const { data } = serviceClient()
+    .storage.from("vehicle-photos")
+    .getPublicUrl(path);
+  return data.publicUrl;
+}

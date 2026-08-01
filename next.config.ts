@@ -30,6 +30,15 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  images: {
+    // Fotos de vehículos servidas desde el bucket público de Supabase Storage — el subdominio
+    // cambia por proyecto/entorno, de ahí el wildcard. El patrón http://127.0.0.1 es para el
+    // Supabase local en desarrollo (`supabase start`).
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "http", hostname: "127.0.0.1", port: "54321" },
+    ],
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
