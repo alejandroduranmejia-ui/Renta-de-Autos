@@ -114,6 +114,7 @@ Tokens definidos una vez en `src/app/globals.css`. Los componentes solo referenc
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | yes | `src/server/auth/*` | Panel de Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | yes | `src/lib/storage.ts` | Panel de Supabase |
 | `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | yes | `src/server/payments/*` | Dashboard de Stripe |
+| `STRIPE_CONNECT_WEBHOOK_SECRET` | no | `src/app/api/webhooks/stripe/route.ts` | Dashboard de Stripe — solo si el destino de "Cuentas conectadas" está separado del de "Tu cuenta" |
 | `RESEND_API_KEY` | yes | Envío de correo | Dashboard de Resend |
 | `CRON_SECRET` | yes | `src/app/api/cron/*` | Generado, valor aleatorio |
 | `SENTRY_DSN` | yes | Observabilidad | Dashboard de Sentry |

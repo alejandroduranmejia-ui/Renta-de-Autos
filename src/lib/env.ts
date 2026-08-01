@@ -16,6 +16,11 @@ const envSchema = z.object({
   // Requeridas desde el paso 10 en adelante (Stripe Connect) — no antes.
   STRIPE_SECRET_KEY: z.string().min(1),
   STRIPE_WEBHOOK_SECRET: z.string().min(1),
+  // Opcional: Stripe exige un destino de webhook separado (con su propio secreto) para eventos
+  // de cuentas conectadas desde la versión de API 2026-06-24 — un solo destino ya no puede
+  // escuchar "Tu cuenta" y "Cuentas conectadas" a la vez. Sin configurar, el endpoint sigue
+  // funcionando solo con eventos de la cuenta propia (checkout.session.completed).
+  STRIPE_CONNECT_WEBHOOK_SECRET: z.string().optional(),
   // Requerida desde el paso 14 en adelante (cron de expiración de holds) — no antes.
   CRON_SECRET: z.string().min(1),
   // Opcional a propósito desde el paso 15: sin una cuenta real de Sentry, el SDK no debe

@@ -14,14 +14,26 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
 
+  // Stripe entrega eventos de "Tu cuenta" y de "Cuentas conectadas" desde destinos separados,
+  // cada uno firmado con su propio secreto — se intenta con el principal primero y, si no
+  // coincide, con el de cuentas conectadas (cuando está configurado).
   let event: Stripe.Event;
   try {
     if (!signature) throw new Error("missing signature");
-    event = stripe.webhooks.constructEvent(
-      rawBody,
-      signature,
-      env.STRIPE_WEBHOOK_SECRET,
-    );
+    try {
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        env.STRIPE_WEBHOOK_SECRET,
+      );
+    } catch (primaryError) {
+      if (!env.STRIPE_CONNECT_WEBHOOK_SECRET) throw primaryError;
+      event = stripe.webhooks.constructEvent(
+        rawBody,
+        signature,
+        env.STRIPE_CONNECT_WEBHOOK_SECRET,
+      );
+    }
   } catch {
     return NextResponse.json({ error: "invalid signature" }, { status: 400 });
   }
