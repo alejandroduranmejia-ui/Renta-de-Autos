@@ -1,4 +1,5 @@
 import { Palette, Users } from "lucide-react";
+import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
@@ -9,12 +10,42 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { BookingDatePicker } from "@/components/vehicles/booking-date-picker";
+import { HostCard } from "@/components/vehicles/host-card";
+import { TrustBadges } from "@/components/vehicles/trust-badges";
+import { formatPriceCents } from "@/lib/format";
 import { getVehicleDetail } from "@/server/vehicles/queries";
 
 const ERROR_MESSAGES: Record<string, string> = {
   fechas_no_disponibles:
     "Ese rango de fechas ya no está disponible para este vehículo — elige otras fechas.",
 };
+
+// Lo que se ve cuando alguien pega el enlace en WhatsApp — el canal por el que este piloto va a
+// circular de verdad. Sin esto, todas las fichas comparten el mismo título genérico del layout.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const vehicle = await getVehicleDetail(id);
+  if (!vehicle) return { title: "Vehículo no disponible" };
+
+  const name = `${vehicle.make} ${vehicle.model} ${vehicle.year}`;
+  const title = `Renta un ${name}`;
+  const description = `${formatPriceCents(vehicle.dailyPriceCents, vehicle.currency)} por día · ${vehicle.seats} puestos · identidad y documentos verificados.`;
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: vehicle.photoUrls.slice(0, 1).map((url) => ({ url, alt: name })),
+    },
+  };
+}
 
 export default async function VehicleDetailPage({
   params,
@@ -50,6 +81,9 @@ export default async function VehicleDetailPage({
             <>
               <CarouselPrevious className="left-4" />
               <CarouselNext className="right-4" />
+              <span className="absolute right-4 bottom-4 rounded-full bg-background/90 px-3 py-1 text-xs font-medium text-foreground shadow-sm backdrop-blur-sm">
+                {vehicle.photoUrls.length} fotos
+              </span>
             </>
           )}
         </Carousel>
@@ -80,6 +114,9 @@ export default async function VehicleDetailPage({
               {vehicle.description}
             </p>
           )}
+
+          <HostCard host={vehicle.host} />
+          <TrustBadges verification={vehicle.verification} />
         </div>
 
         <div className="flex flex-col gap-3">

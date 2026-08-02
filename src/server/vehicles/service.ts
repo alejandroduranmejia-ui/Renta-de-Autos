@@ -155,7 +155,10 @@ export async function addVehicleDocumentCore(
   return created;
 }
 
-const REQUIRED_DOCUMENT_TYPES = [
+// Fuente de verdad de qué documentos exige una publicación activa. `queries.ts` la importa para
+// que el badge "documentos al día" de la ficha pública nunca prometa algo distinto de lo que esta
+// función exige para activar.
+export const REQUIRED_DOCUMENT_TYPES = [
   "tarjeta_circulacion",
   "poliza_seguro",
 ] as const;

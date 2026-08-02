@@ -1,7 +1,7 @@
 import { and, eq, lt } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { bookings, vehicles } from "@/lib/db/schema";
-import { calculateCommissionCents } from "@/lib/pricing";
+import { quoteBooking } from "@/lib/pricing";
 import { NotFoundError } from "@/server/errors";
 
 // Capa de servicio — sin `cookies()`/`headers()` (blueprint.md §9, "Toda mutación real vive en
@@ -38,18 +38,12 @@ export async function createBookingCore(
     );
   }
 
-  const days = Math.max(
-    1,
-    Math.ceil(
-      (params.endsAt.getTime() - params.startsAt.getTime()) /
-        (24 * 60 * 60 * 1000),
-    ),
-  );
-  const priceCents = vehicle.dailyPriceCents * days;
-  const commissionCents = calculateCommissionCents(priceCents);
-  // Depósito de garantía: el precio de un día — ajustable, no es la comisión de plataforma
-  // (esa sí es una decisión de negocio confirmada, blueprint.md §20.3 #7).
-  const depositHoldCents = vehicle.dailyPriceCents;
+  // Misma cotización que ve el arrendatario en la ficha — una sola fórmula (src/lib/pricing.ts).
+  const quote = quoteBooking({
+    dailyPriceCents: vehicle.dailyPriceCents,
+    startsAt: params.startsAt,
+    endsAt: params.endsAt,
+  });
 
   try {
     const [created] = await db
@@ -61,9 +55,9 @@ export async function createBookingCore(
         endsAt: params.endsAt,
         status: "held",
         holdExpiresAt: new Date(now.getTime() + HOLD_MINUTES * 60 * 1000),
-        priceCents,
-        commissionCents,
-        depositHoldCents,
+        priceCents: quote.subtotalCents,
+        commissionCents: quote.ownerCommissionCents,
+        depositHoldCents: quote.depositHoldCents,
         currency: vehicle.currency,
         timezoneAtBooking: "America/Bogota",
       })

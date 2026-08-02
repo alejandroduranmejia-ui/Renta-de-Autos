@@ -101,11 +101,20 @@ export default async function MisReservasPage({
                   <CalendarRange className="size-3.5" />
                   {formatDate(booking.startsAt)} – {formatDate(booking.endsAt)}
                 </span>
+                {/* Mismo desglose que la ficha (booking-date-picker) — el número total nunca
+                    cambia entre lo que se prometió y lo que se autoriza. */}
                 <span className="text-sm font-medium text-foreground">
                   {formatPriceCents(
                     booking.priceCents + booking.depositHoldCents,
                     booking.currency,
-                  )}
+                  )}{" "}
+                  autorizado
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {formatPriceCents(booking.priceCents, booking.currency)} de
+                  renta ·{" "}
+                  {formatPriceCents(booking.depositHoldCents, booking.currency)}{" "}
+                  de depósito reembolsable
                 </span>
               </div>
 

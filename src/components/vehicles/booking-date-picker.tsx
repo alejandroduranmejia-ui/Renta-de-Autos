@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { formatPriceCents } from "@/lib/format";
+import { quoteBooking } from "@/lib/pricing";
 import { createBooking } from "@/server/bookings/mutations";
 
 function toIsoDate(date: Date) {
@@ -32,13 +33,19 @@ export function BookingDatePicker({
 }) {
   const [range, setRange] = useState<DateRange | undefined>();
 
-  const nights =
-    range?.from && range?.to
-      ? Math.round(
-          (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24),
-        )
-      : 0;
-  const totalCents = nights * dailyPriceCents;
+  // El servidor rechaza `endsAt <= startsAt` (bookings/service.ts), así que la UI exige lo mismo
+  // antes de cotizar — de otro modo el botón se habilitaría para un rango que la acción rechaza.
+  const hasValidRange = Boolean(
+    range?.from && range?.to && range.to > range.from,
+  );
+  const quote =
+    hasValidRange && range?.from && range?.to
+      ? quoteBooking({
+          dailyPriceCents,
+          startsAt: range.from,
+          endsAt: range.to,
+        })
+      : null;
 
   return (
     <form
@@ -92,23 +99,39 @@ export function BookingDatePicker({
         <input type="hidden" name="endsAt" value={toIsoDate(range.to)} />
       )}
 
-      {nights > 0 && (
-        <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
-          <span className="text-muted-foreground">
-            {formatPriceCents(dailyPriceCents, currency)} × {nights}{" "}
-            {nights === 1 ? "noche" : "noches"}
-          </span>
-          <span className="font-medium text-foreground">
-            {formatPriceCents(totalCents, currency)}
-          </span>
+      {quote && (
+        <div className="flex flex-col gap-2 border-t border-border pt-3 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">
+              {formatPriceCents(dailyPriceCents, currency)} × {quote.days}{" "}
+              {quote.days === 1 ? "día" : "días"}
+            </span>
+            <span className="text-foreground">
+              {formatPriceCents(quote.subtotalCents, currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground">Depósito reembolsable</span>
+            <span className="text-foreground">
+              {formatPriceCents(quote.depositHoldCents, currency)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between border-t border-border pt-2 font-medium">
+            <span className="text-foreground">Autorizado hoy</span>
+            <span className="text-foreground">
+              {formatPriceCents(quote.authorizedTodayCents, currency)}
+            </span>
+          </div>
         </div>
       )}
 
-      <Button type="submit" size="lg" disabled={nights === 0} className="h-11">
+      <Button type="submit" size="lg" disabled={!quote} className="h-11">
         Reservar
       </Button>
       <p className="text-center text-xs text-muted-foreground">
-        No se te cobrará todavía.
+        {quote
+          ? `Se cobra ${formatPriceCents(quote.chargedAtEndCents, currency)} al terminar la renta; el depósito se libera si no hay daños.`
+          : "El depósito se autoriza, no se cobra: se libera si no hay daños."}
       </p>
     </form>
   );

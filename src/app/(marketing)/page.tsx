@@ -63,7 +63,9 @@ export default async function HomePage() {
             asChild
             className="h-11 px-6 text-base"
           >
-            <Link href="/mis-vehiculos/nuevo">Publica tu vehículo</Link>
+            {/* Landing pública, no la ruta autenticada de alta: un visitante anónimo caía en el
+                login sin saber qué se le iba a pedir. */}
+            <Link href="/publica-tu-vehiculo">Publica tu vehículo</Link>
           </Button>
         </div>
       </section>
