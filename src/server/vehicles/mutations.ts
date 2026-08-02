@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { FEATURE_KEYS } from "@/lib/vehicle-features";
 import {
   FUEL_TYPE_KEYS,
   TRANSMISSION_KEYS,
@@ -39,6 +40,8 @@ const createSchema = z.object({
   vehicleType: z.enum(VEHICLE_TYPE_KEYS).optional(),
   transmission: z.enum(TRANSMISSION_KEYS).optional(),
   fuelType: z.enum(FUEL_TYPE_KEYS).optional(),
+  // Lista blanca cerrada: nada fuera de src/lib/vehicle-features.ts llega a la columna `features`.
+  features: z.array(z.enum(FEATURE_KEYS)).optional(),
 });
 
 /** Los `<select>` vacíos mandan "" y Zod los rechazaría — se normalizan a undefined. */
@@ -62,6 +65,10 @@ export async function createVehicle(formData: FormData) {
     vehicleType: optional(formData, "vehicleType"),
     transmission: optional(formData, "transmission"),
     fuelType: optional(formData, "fuelType"),
+    // Los checkboxes marcados llegan repetidos bajo la misma clave.
+    features: formData.getAll("features").length
+      ? (formData.getAll("features") as string[])
+      : undefined,
   });
 
   const created = await createVehicleCore(actor, parsed);
@@ -135,6 +142,10 @@ export async function updateVehicle(formData: FormData) {
     vehicleType: optional(formData, "vehicleType"),
     transmission: optional(formData, "transmission"),
     fuelType: optional(formData, "fuelType"),
+    // Los checkboxes marcados llegan repetidos bajo la misma clave.
+    features: formData.getAll("features").length
+      ? (formData.getAll("features") as string[])
+      : undefined,
   });
   await updateVehicleCore(actor, vehicleId, parsed);
   redirect(`/mis-vehiculos/${vehicleId}/editar?guardado=1`);

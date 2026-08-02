@@ -85,6 +85,14 @@ async function seed() {
     vehicleType: "sedan",
     transmission: "automatica",
     fuelType: "gasolina",
+    features: [
+      "camara_reversa",
+      "frenos_abs",
+      "bluetooth",
+      "apple_carplay",
+      "aire_acondicionado",
+      "vidrios_electricos",
+    ],
     status: "active",
   });
 

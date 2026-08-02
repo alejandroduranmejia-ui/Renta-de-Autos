@@ -253,6 +253,7 @@ export type VehicleDetail = {
   vehicleType: string | null;
   transmission: string | null;
   fuelType: string | null;
+  features: string[];
   photoUrls: string[];
   host: VehicleHost;
   verification: VehicleVerification;
@@ -277,6 +278,7 @@ export async function getVehicleDetail(
       vehicleType: vehicles.vehicleType,
       transmission: vehicles.transmission,
       fuelType: vehicles.fuelType,
+      features: vehicles.features,
       ownerId: vehicles.ownerId,
       hostFullName: users.fullName,
       hostAvatarUrl: users.avatarUrl,

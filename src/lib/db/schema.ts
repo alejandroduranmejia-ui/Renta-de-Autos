@@ -94,6 +94,12 @@ export const vehicles = pgTable(
     vehicleType: text("vehicle_type"),
     transmission: text("transmission"),
     fuelType: text("fuel_type"),
+    // Arreglo de claves de `src/lib/vehicle-features.ts`, validado con Zod en el mutation. Se
+    // eligió `jsonb` sobre una tabla puente porque a la escala del piloto (20 vehículos) una
+    // tabla extra es ceremonia sin beneficio: nunca se consulta "qué vehículos tienen X" desde
+    // SQL, solo se lee la lista completa junto con el vehículo. Si algún día hay que filtrar por
+    // característica, esto se normaliza con una migración expand→migrate→contract.
+    features: jsonb("features").$type<string[]>().notNull().default([]),
     status: text("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

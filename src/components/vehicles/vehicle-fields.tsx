@@ -1,5 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { FEATURE_GROUPS } from "@/lib/vehicle-features";
 import {
   FUEL_TYPES,
   TRANSMISSIONS,
@@ -12,6 +13,7 @@ type Defaults = {
   vehicleType?: string | null;
   transmission?: string | null;
   fuelType?: string | null;
+  features?: string[] | null;
 };
 
 const SELECTS = [
@@ -69,6 +71,34 @@ export function VehicleDiscoveryFields({ defaults }: { defaults?: Defaults }) {
           </select>
         </div>
       ))}
+
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-2 text-sm font-medium text-foreground">
+          Características
+        </legend>
+        {Object.entries(FEATURE_GROUPS).map(([groupKey, group]) => (
+          <div key={groupKey} className="flex flex-col gap-1.5">
+            <span className="text-xs text-muted-foreground">{group.label}</span>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {Object.entries(group.features).map(([key, label]) => (
+                <label
+                  key={key}
+                  className="flex items-center gap-1.5 text-sm text-foreground"
+                >
+                  <input
+                    type="checkbox"
+                    name="features"
+                    value={key}
+                    defaultChecked={defaults?.features?.includes(key)}
+                    className="size-4 accent-primary"
+                  />
+                  {label}
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </fieldset>
     </>
   );
 }

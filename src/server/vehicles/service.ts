@@ -36,6 +36,7 @@ type DiscoveryFields = {
   vehicleType?: string;
   transmission?: string;
   fuelType?: string;
+  features?: string[];
 };
 
 export async function createVehicleCore(
@@ -70,6 +71,7 @@ export async function createVehicleCore(
       vehicleType: params.vehicleType,
       transmission: params.transmission,
       fuelType: params.fuelType,
+      features: params.features,
       // "pending_review" desde que se crea — no hay un paso separado de "borrador sin enviar" en
       // este proyecto; queda esperando identidad + documentos aprobados para pasar a "active".
       status: "pending_review",

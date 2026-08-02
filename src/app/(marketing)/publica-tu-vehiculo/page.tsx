@@ -2,6 +2,7 @@ import { FileCheck2, IdCard, Wallet } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { EarningsCalculator } from "@/components/vehicles/earnings-calculator";
 import { PLATFORM_COMMISSION_RATE } from "@/lib/pricing";
 
 export const metadata: Metadata = {
@@ -72,6 +73,19 @@ export default function PublicaTuVehiculoPage() {
         </ul>
       </section>
 
+      <section className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <h2 className="text-xl font-semibold text-foreground">
+            Cuánto podrías recibir
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Mueve los controles con tu precio y los días que estarías dispuesto
+            a rentar.
+          </p>
+        </div>
+        <EarningsCalculator />
+      </section>
+
       <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-6">
         <h2 className="font-medium text-card-foreground">Cuánto cobramos</h2>
         <p className="text-sm text-muted-foreground">
@@ -79,6 +93,15 @@ export default function PublicaTuVehiculoPage() {
           es gratis y no hay cuota mensual — si tu vehículo no se renta, no
           pagas nada.
         </p>
+      </section>
+
+      <section className="flex flex-col items-center gap-4 text-center">
+        <h2 className="text-xl font-semibold text-foreground">
+          ¿Listo para publicar?
+        </h2>
+        <Button size="lg" asChild className="h-11 px-6 text-base">
+          <Link href="/mis-vehiculos/nuevo">Publicar mi vehículo</Link>
+        </Button>
       </section>
     </div>
   );

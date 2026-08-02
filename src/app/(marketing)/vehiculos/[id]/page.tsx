@@ -1,4 +1,3 @@
-import { Car, Cog, Fuel, MapPin, Palette, Users } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -10,15 +9,12 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { BookingDatePicker } from "@/components/vehicles/booking-date-picker";
+import { BookingPolicies } from "@/components/vehicles/booking-policies";
 import { HostCard } from "@/components/vehicles/host-card";
 import { TrustBadges } from "@/components/vehicles/trust-badges";
+import { VehicleFeatures } from "@/components/vehicles/vehicle-features";
+import { VehicleHeader } from "@/components/vehicles/vehicle-header";
 import { formatPriceCents } from "@/lib/format";
-import {
-  FUEL_TYPES,
-  labelFor,
-  TRANSMISSIONS,
-  VEHICLE_TYPES,
-} from "@/lib/vehicle-taxonomy";
 import { getVehicleDetail } from "@/server/vehicles/queries";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -101,45 +97,7 @@ export default async function VehicleDetailPage({
 
       <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              {vehicle.make} {vehicle.model} ({vehicle.year})
-            </h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1.5">
-                <Palette className="size-4" /> {vehicle.color}
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Users className="size-4" /> {vehicle.seats} puestos
-              </span>
-              {labelFor(VEHICLE_TYPES, vehicle.vehicleType) && (
-                <span className="flex items-center gap-1.5">
-                  <Car className="size-4" />
-                  {labelFor(VEHICLE_TYPES, vehicle.vehicleType)}
-                </span>
-              )}
-              {labelFor(TRANSMISSIONS, vehicle.transmission) && (
-                <span className="flex items-center gap-1.5">
-                  <Cog className="size-4" />
-                  {labelFor(TRANSMISSIONS, vehicle.transmission)}
-                </span>
-              )}
-              {labelFor(FUEL_TYPES, vehicle.fuelType) && (
-                <span className="flex items-center gap-1.5">
-                  <Fuel className="size-4" />
-                  {labelFor(FUEL_TYPES, vehicle.fuelType)}
-                </span>
-              )}
-            </div>
-
-            {vehicle.zone && (
-              <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                <MapPin className="size-4" />
-                Se entrega en {vehicle.zone}
-                {vehicle.pickupNotes && ` — ${vehicle.pickupNotes}`}
-              </p>
-            )}
-          </div>
+          <VehicleHeader vehicle={vehicle} />
 
           {vehicle.description && (
             <p className="whitespace-pre-line text-foreground">
@@ -149,6 +107,8 @@ export default async function VehicleDetailPage({
 
           <HostCard host={vehicle.host} />
           <TrustBadges verification={vehicle.verification} />
+          <VehicleFeatures features={vehicle.features} />
+          <BookingPolicies />
         </div>
 
         <div className="flex flex-col gap-3">
