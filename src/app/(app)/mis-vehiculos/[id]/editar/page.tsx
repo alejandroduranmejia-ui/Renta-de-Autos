@@ -1,4 +1,5 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,9 +13,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { PublicationChecklist } from "@/components/vehicles/publication-checklist";
 import { VehicleDiscoveryFields } from "@/components/vehicles/vehicle-fields";
 import { db } from "@/lib/db";
-import { vehicleDocuments, vehiclePhotos, vehicles } from "@/lib/db/schema";
+import {
+  connectedAccounts,
+  identityVerifications,
+  vehicleDocuments,
+  vehiclePhotos,
+  vehicles,
+} from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
 import {
   activateVehicle,
@@ -23,6 +31,10 @@ import {
   deactivateVehicle,
   updateVehicle,
 } from "@/server/vehicles/mutations";
+import {
+  MIN_PHOTOS_TO_ACTIVATE,
+  REQUIRED_DOCUMENT_TYPES,
+} from "@/server/vehicles/service";
 
 const ERROR_MESSAGES: Record<string, string> = {
   identity_not_approved: "Tu identidad todavía no está aprobada.",
@@ -30,6 +42,7 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Faltan documentos del vehículo o aún no están aprobados (tarjeta de circulación y póliza de seguro).",
   payouts_not_enabled:
     "Tu cuenta de pagos todavía no está lista para recibir transferencias.",
+  photos_missing: `Necesitas al menos ${MIN_PHOTOS_TO_ACTIVATE} fotos para activar la publicación.`,
   archivo_requerido: "Selecciona un archivo.",
 };
 
@@ -71,6 +84,26 @@ export default async function EditarVehiculoPage({
     .from(vehicleDocuments)
     .where(eq(vehicleDocuments.vehicleId, id));
 
+  const [identity] = await db
+    .select({ id: identityVerifications.id })
+    .from(identityVerifications)
+    .where(
+      and(
+        eq(identityVerifications.userId, actor.id),
+        eq(identityVerifications.status, "approved"),
+      ),
+    )
+    .limit(1);
+  const [connected] = await db
+    .select({ payoutsEnabled: connectedAccounts.payoutsEnabled })
+    .from(connectedAccounts)
+    .where(eq(connectedAccounts.ownerId, actor.id))
+    .limit(1);
+
+  const approvedDocumentTypes = new Set(
+    documents.filter((d) => d.status === "approved").map((d) => d.documentType),
+  ).size;
+
   return (
     <div className="mx-auto flex w-full max-w-md flex-col gap-8">
       <div className="flex items-center justify-between">
@@ -79,6 +112,22 @@ export default async function EditarVehiculoPage({
         </h1>
         <Badge variant="secondary">{vehicle.status}</Badge>
       </div>
+
+      <PublicationChecklist
+        state={{
+          identityApproved: Boolean(identity),
+          photoCount: photos.length,
+          approvedDocumentTypes,
+          requiredDocumentTypes: REQUIRED_DOCUMENT_TYPES.length,
+          payoutsEnabled: Boolean(connected?.payoutsEnabled),
+        }}
+      />
+
+      <Button variant="outline" asChild className="self-start">
+        <Link href={`/mis-vehiculos/${vehicle.id}/disponibilidad`}>
+          Gestionar disponibilidad
+        </Link>
+      </Button>
 
       {guardado && <p className="text-sm text-success">Guardado.</p>}
       {error && (
@@ -119,7 +168,7 @@ export default async function EditarVehiculoPage({
         <h2 className="font-medium text-foreground">Fotos ({photos.length})</h2>
         <form action={addVehiclePhoto} className="flex flex-col gap-2">
           <input type="hidden" name="vehicleId" value={vehicle.id} />
-          <Input type="file" name="file" accept="image/*" required />
+          <Input type="file" name="file" accept="image/*" multiple required />
           <Button
             type="submit"
             variant="outline"

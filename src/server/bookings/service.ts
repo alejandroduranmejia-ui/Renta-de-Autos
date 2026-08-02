@@ -1,4 +1,5 @@
 import { and, eq, lt } from "drizzle-orm";
+import { VEHICLE_TIMEZONE } from "@/lib/date";
 import { db } from "@/lib/db";
 import { bookings, vehicles } from "@/lib/db/schema";
 import { quoteBooking } from "@/lib/pricing";
@@ -10,7 +11,9 @@ import { NotFoundError } from "@/server/errors";
 export class ConflictError extends Error {}
 
 const HOLD_MINUTES = 15;
-const MIN_NOTICE_HOURS = 2;
+// Exportado porque el cálculo de disponibilidad que alimenta el calendario tiene que usar el
+// mismo aviso mínimo que esta función exige, o la UI ofrecería un día que la reserva rechaza.
+export const MIN_NOTICE_HOURS = 2;
 
 type Actor = { id: string };
 
@@ -59,7 +62,7 @@ export async function createBookingCore(
         commissionCents: quote.ownerCommissionCents,
         depositHoldCents: quote.depositHoldCents,
         currency: vehicle.currency,
-        timezoneAtBooking: "America/Bogota",
+        timezoneAtBooking: VEHICLE_TIMEZONE,
       })
       .returning();
     return created;

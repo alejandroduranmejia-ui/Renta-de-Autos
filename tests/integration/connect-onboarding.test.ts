@@ -7,10 +7,14 @@ import {
   paymentEvents,
   users,
   vehicleDocuments,
+  vehiclePhotos,
   vehicles,
 } from "@/lib/db/schema";
 import { applyAccountSync } from "@/server/payments/connect";
-import { activateVehicleCore } from "@/server/vehicles/service";
+import {
+  activateVehicleCore,
+  MIN_PHOTOS_TO_ACTIVATE,
+} from "@/server/vehicles/service";
 
 // syncConnectedAccountCore() en sí (que sí llama a la API real de Stripe) no se prueba aquí —
 // no hay credenciales reales de Stripe en este entorno. `applyAccountSync` es la parte de esa
@@ -25,6 +29,9 @@ describe("stripe connect onboarding", () => {
     await db
       .delete(vehicleDocuments)
       .where(eq(vehicleDocuments.vehicleId, vehicleId));
+    await db
+      .delete(vehiclePhotos)
+      .where(eq(vehiclePhotos.vehicleId, vehicleId));
     await db.delete(vehicles).where(eq(vehicles.id, vehicleId));
     await db
       .delete(connectedAccounts)
@@ -58,6 +65,16 @@ describe("stripe connect onboarding", () => {
       seats: 4,
       dailyPriceCents: 100_000,
     });
+    // Fotos suficientes para pasar `MIN_PHOTOS_TO_ACTIVATE`, que se evalúa antes que los
+    // documentos y los pagos: sin esto, este test mediría el bloqueo por fotos y no el de Connect,
+    // que es lo que le interesa.
+    await db.insert(vehiclePhotos).values(
+      Array.from({ length: MIN_PHOTOS_TO_ACTIVATE }, (_, index) => ({
+        vehicleId,
+        storagePath: `${vehicleId}/connect-${index}.jpg`,
+        position: index,
+      })),
+    );
     await db.insert(vehicleDocuments).values([
       {
         vehicleId,

@@ -10,7 +10,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { toIsoDate } from "@/lib/date";
+import { parseIsoDate, toIsoDate } from "@/lib/date";
 import { formatPriceCents } from "@/lib/format";
 import { quoteBooking } from "@/lib/pricing";
 import { createBooking } from "@/server/bookings/mutations";
@@ -23,12 +23,22 @@ export function BookingDatePicker({
   vehicleId,
   dailyPriceCents,
   currency,
+  unavailableDates = [],
 }: {
   vehicleId: string;
   dailyPriceCents: number;
   currency: string;
+  /** Días "YYYY-MM-DD" que el dueño bloqueó o que ya están reservados. */
+  unavailableDates?: string[];
 }) {
   const [range, setRange] = useState<DateRange | undefined>();
+
+  // Se calcula una vez: la lista viene del servidor y no cambia mientras la página está abierta.
+  const [disabledDays] = useState(() =>
+    unavailableDates
+      .map(parseIsoDate)
+      .filter((date): date is Date => date !== undefined),
+  );
 
   // El servidor rechaza `endsAt <= startsAt` (bookings/service.ts), así que la UI exige lo mismo
   // antes de cotizar — de otro modo el botón se habilitaría para un rango que la acción rechaza.
@@ -83,7 +93,7 @@ export function BookingDatePicker({
             selected={range}
             onSelect={setRange}
             numberOfMonths={2}
-            disabled={{ before: new Date() }}
+            disabled={[{ before: new Date() }, ...disabledDays]}
           />
         </PopoverContent>
       </Popover>

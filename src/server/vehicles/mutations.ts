@@ -14,9 +14,11 @@ import {
   activateVehicleCore,
   addVehicleDocumentCore,
   addVehiclePhotoCore,
+  blockVehicleDatesCore,
   createVehicleCore,
   deactivateVehicleCore,
   reviewVehicleDocumentCore,
+  unblockVehicleDatesCore,
   updateVehicleCore,
 } from "@/server/vehicles/service";
 
@@ -93,15 +95,23 @@ export async function activateVehicle(formData: FormData) {
 export async function addVehiclePhoto(formData: FormData) {
   const actor = await requireUser();
   const vehicleId = z.string().uuid().parse(formData.get("vehicleId"));
-  const file = formData.get("file") as File | null;
-  if (!file || file.size === 0) {
+  // El input es `multiple`: activar exige MIN_PHOTOS_TO_ACTIVATE fotos y subirlas de a una era
+  // fricción pura.
+  const files = formData
+    .getAll("file")
+    .filter((entry): entry is File => entry instanceof File && entry.size > 0);
+  if (files.length === 0) {
     redirect(`/mis-vehiculos/${vehicleId}/editar?error=archivo_requerido`);
   }
-  await addVehiclePhotoCore(actor, vehicleId, {
-    file: Buffer.from(await file.arrayBuffer()),
-    fileName: file.name,
-    contentType: file.type,
-  });
+  // En serie: `addVehiclePhotoCore` calcula `position` contando las fotos existentes, así que en
+  // paralelo dos subidas se asignarían la misma posición.
+  for (const file of files) {
+    await addVehiclePhotoCore(actor, vehicleId, {
+      file: Buffer.from(await file.arrayBuffer()),
+      fileName: file.name,
+      contentType: file.type,
+    });
+  }
   redirect(`/mis-vehiculos/${vehicleId}/editar`);
 }
 
@@ -149,6 +159,33 @@ export async function updateVehicle(formData: FormData) {
   });
   await updateVehicleCore(actor, vehicleId, parsed);
   redirect(`/mis-vehiculos/${vehicleId}/editar?guardado=1`);
+}
+
+const blockDatesSchema = z.object({
+  vehicleId: z.string().uuid(),
+  from: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  to: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  reason: z.string().max(200).optional(),
+});
+
+export async function blockVehicleDates(formData: FormData) {
+  const actor = await requireUser();
+  const parsed = blockDatesSchema.parse({
+    vehicleId: formData.get("vehicleId"),
+    from: formData.get("from"),
+    to: formData.get("to"),
+    reason: optional(formData, "reason"),
+  });
+  await blockVehicleDatesCore(actor, parsed.vehicleId, parsed);
+  redirect(`/mis-vehiculos/${parsed.vehicleId}/disponibilidad?guardado=1`);
+}
+
+export async function unblockVehicleDates(formData: FormData) {
+  const actor = await requireUser();
+  const vehicleId = z.string().uuid().parse(formData.get("vehicleId"));
+  const exceptionId = z.string().uuid().parse(formData.get("exceptionId"));
+  await unblockVehicleDatesCore(actor, vehicleId, exceptionId);
+  revalidatePath(`/mis-vehiculos/${vehicleId}/disponibilidad`);
 }
 
 const reviewDocumentSchema = z.object({

@@ -66,7 +66,8 @@ export function EarningsCalculator() {
         </div>
         <div className="flex items-center justify-between">
           <dt className="text-muted-foreground">
-            Comisión de la plataforma ({Math.round(PLATFORM_COMMISSION_RATE * 100)}%)
+            Comisión de la plataforma (
+            {Math.round(PLATFORM_COMMISSION_RATE * 100)}%)
           </dt>
           <dd className="text-card-foreground">
             −{formatPriceCents(commissionCents, CURRENCY)}

@@ -12,8 +12,11 @@ import {
   notExists,
   type SQL,
 } from "drizzle-orm";
+import { VEHICLE_TIMEZONE } from "@/lib/date";
 import { db } from "@/lib/db";
 import {
+  availabilityExceptions,
+  availabilityRules,
   bookings,
   identityVerifications,
   users,
@@ -22,6 +25,8 @@ import {
   vehicles,
 } from "@/lib/db/schema";
 import { getPublicPhotoUrl } from "@/lib/storage";
+import { computeSlots } from "@/server/bookings/availability";
+import { MIN_NOTICE_HOURS } from "@/server/bookings/service";
 import { REQUIRED_DOCUMENT_TYPES } from "@/server/vehicles/service";
 
 export type ActiveVehicleListing = {
@@ -160,6 +165,23 @@ export async function listActiveVehicles(
           ),
       ),
     );
+    // Un vehículo cuyo dueño bloqueó esas fechas tampoco debe aparecer disponible. Antes este
+    // filtro solo miraba `bookings` y las excepciones se ignoraban por completo.
+    conditions.push(
+      notExists(
+        db
+          .select()
+          .from(availabilityExceptions)
+          .where(
+            and(
+              eq(availabilityExceptions.vehicleId, vehicles.id),
+              eq(availabilityExceptions.type, "block"),
+              lte(availabilityExceptions.startsAt, to),
+              gte(availabilityExceptions.endsAt, from),
+            ),
+          ),
+      ),
+    );
   }
 
   const where = and(...conditions);
@@ -200,6 +222,77 @@ export async function listActiveVehicles(
     perPage,
     pageCount: Math.max(1, Math.ceil(total / perPage)),
   };
+}
+
+/** Un vehículo sin reglas semanales configuradas se considera abierto todos los días.
+ *
+ * Es el comportamiento que el producto tuvo siempre (nadie podía definir reglas porque no había
+ * UI), y hay que preservarlo: si `computeSlots` recibiera una lista vacía de reglas marcaría
+ * TODOS los días como no disponibles y el calendario quedaría completamente bloqueado para cada
+ * vehículo ya publicado. Las reglas son opt-in; lo que sí bloquea siempre son las excepciones y
+ * las reservas existentes. */
+const ALWAYS_OPEN = Array.from({ length: 7 }, (_, weekday) => ({
+  weekday,
+  startTime: "00:00:00",
+  endTime: "23:59:00",
+}));
+
+const AVAILABILITY_HORIZON_DAYS = 180;
+
+/** Días que el calendario debe mostrar deshabilitados, en formato "YYYY-MM-DD".
+ *
+ * Advisorio, igual que el filtro de fechas de `listActiveVehicles`: la autoridad real contra el
+ * doble booking sigue siendo el exclusion constraint `excl_bookings_no_overlap`. */
+export async function getVehicleUnavailableDates(
+  vehicleId: string,
+  now: Date = new Date(),
+): Promise<string[]> {
+  const [rules, exceptions, existingBookings] = await Promise.all([
+    db
+      .select({
+        weekday: availabilityRules.weekday,
+        startTime: availabilityRules.startTime,
+        endTime: availabilityRules.endTime,
+        validFrom: availabilityRules.validFrom,
+        validUntil: availabilityRules.validUntil,
+      })
+      .from(availabilityRules)
+      .where(eq(availabilityRules.vehicleId, vehicleId)),
+    db
+      .select({
+        startsAt: availabilityExceptions.startsAt,
+        endsAt: availabilityExceptions.endsAt,
+        type: availabilityExceptions.type,
+      })
+      .from(availabilityExceptions)
+      .where(eq(availabilityExceptions.vehicleId, vehicleId)),
+    db
+      .select({ startsAt: bookings.startsAt, endsAt: bookings.endsAt })
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.vehicleId, vehicleId),
+          inArray(bookings.status, ["held", "confirmed", "active"]),
+        ),
+      ),
+  ]);
+
+  const slots = computeSlots({
+    rules: rules.length > 0 ? rules : ALWAYS_OPEN,
+    exceptions: exceptions.map((e) => ({
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      type: e.type as "block" | "open",
+    })),
+    existingBookings,
+    now,
+    vehicleTimeZone: VEHICLE_TIMEZONE,
+    rangeStartDays: 0,
+    rangeEndDays: AVAILABILITY_HORIZON_DAYS,
+    minNoticeHours: MIN_NOTICE_HOURS,
+  });
+
+  return slots.filter((slot) => !slot.available).map((slot) => slot.date);
 }
 
 // Zonas que hoy tienen al menos un vehículo activo. Alimenta el desplegable de búsqueda: ofrecer

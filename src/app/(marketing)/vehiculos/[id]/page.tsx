@@ -15,7 +15,10 @@ import { TrustBadges } from "@/components/vehicles/trust-badges";
 import { VehicleFeatures } from "@/components/vehicles/vehicle-features";
 import { VehicleHeader } from "@/components/vehicles/vehicle-header";
 import { formatPriceCents } from "@/lib/format";
-import { getVehicleDetail } from "@/server/vehicles/queries";
+import {
+  getVehicleDetail,
+  getVehicleUnavailableDates,
+} from "@/server/vehicles/queries";
 
 const ERROR_MESSAGES: Record<string, string> = {
   fechas_no_disponibles:
@@ -59,6 +62,8 @@ export default async function VehicleDetailPage({
   const [{ id }, { error }] = await Promise.all([params, searchParams]);
   const vehicle = await getVehicleDetail(id);
   if (!vehicle) notFound();
+
+  const unavailableDates = await getVehicleUnavailableDates(vehicle.id);
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
@@ -121,6 +126,7 @@ export default async function VehicleDetailPage({
             vehicleId={vehicle.id}
             dailyPriceCents={vehicle.dailyPriceCents}
             currency={vehicle.currency}
+            unavailableDates={unavailableDates}
           />
         </div>
       </div>

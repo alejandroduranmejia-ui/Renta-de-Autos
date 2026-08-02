@@ -1,6 +1,8 @@
 import { and, eq } from "drizzle-orm";
+import { utcDayBounds } from "@/lib/date";
 import { db } from "@/lib/db";
 import {
+  availabilityExceptions,
   connectedAccounts,
   identityVerifications,
   vehicleDocuments,
@@ -8,6 +10,7 @@ import {
   vehicles,
 } from "@/lib/db/schema";
 import { uploadPrivate, uploadPublicPhoto } from "@/lib/storage";
+import { ConflictError } from "@/server/bookings/service";
 import { ForbiddenError, NotFoundError } from "@/server/errors";
 
 // Capa de servicio — sin `cookies()`/`headers()`, recibe un actor ya resuelto (blueprint.md §9,
@@ -184,7 +187,12 @@ export const REQUIRED_DOCUMENT_TYPES = [
 export type ActivationBlockReason =
   | "identity_not_approved"
   | "documents_missing_or_not_approved"
-  | "payouts_not_enabled";
+  | "payouts_not_enabled"
+  | "photos_missing";
+
+// Un vehículo sin fotos no se puede vender, y con una sola no genera confianza suficiente para
+// que un desconocido mueva dinero. Decisión del dueño del producto el 2026-08-02.
+export const MIN_PHOTOS_TO_ACTIVATE = 3;
 
 // La condición de Stripe Connect (payouts_enabled) se agrega en el paso 10 (E2-T5) como una
 // condición más de esta misma función — sin reescribirla, sin romper este test (blueprint.md §9).
@@ -206,6 +214,14 @@ export async function activateVehicleCore(
     .limit(1);
   if (!identity) {
     return { ok: false, reason: "identity_not_approved" };
+  }
+
+  const photos = await db
+    .select({ id: vehiclePhotos.id })
+    .from(vehiclePhotos)
+    .where(eq(vehiclePhotos.vehicleId, vehicleId));
+  if (photos.length < MIN_PHOTOS_TO_ACTIVATE) {
+    return { ok: false, reason: "photos_missing" };
   }
 
   const documents = await db
@@ -240,6 +256,60 @@ export async function activateVehicleCore(
     .set({ status: "active" })
     .where(eq(vehicles.id, vehicle.id));
   return { ok: true };
+}
+
+// Bloquea un rango de días del calendario del vehículo. Escribe los límites con `utcDayBounds`
+// porque es la misma convención que `computeSlots` usa para decidir si una excepción tapa un día
+// (ver el comentario de esa función) — con cualquier otra, el bloqueo se corre a los días vecinos.
+export async function blockVehicleDatesCore(
+  actor: Actor,
+  vehicleId: string,
+  params: { from: string; to: string; reason?: string },
+) {
+  // Segunda capa de autorización dentro del service, no solo en el wrapper (regla 7 de CLAUDE.md).
+  await getOwnedVehicleOrThrow(actor, vehicleId);
+
+  const { startsAt } = utcDayBounds(params.from);
+  const { endsAt } = utcDayBounds(params.to);
+  if (endsAt <= startsAt) {
+    throw new ConflictError("El rango de fechas está invertido.");
+  }
+
+  const [created] = await db
+    .insert(availabilityExceptions)
+    .values({
+      vehicleId,
+      startsAt,
+      endsAt,
+      type: "block",
+      reason: params.reason,
+    })
+    .returning();
+  return created;
+}
+
+export async function unblockVehicleDatesCore(
+  actor: Actor,
+  vehicleId: string,
+  exceptionId: string,
+) {
+  await getOwnedVehicleOrThrow(actor, vehicleId);
+
+  const [deleted] = await db
+    .delete(availabilityExceptions)
+    .where(
+      and(
+        eq(availabilityExceptions.id, exceptionId),
+        // Acotado al vehículo ya verificado como propio: sin esto, un id de excepción de otro
+        // dueño se borraría con solo poseer cualquier vehículo.
+        eq(availabilityExceptions.vehicleId, vehicleId),
+      ),
+    )
+    .returning();
+  if (!deleted) {
+    throw new NotFoundError("Bloqueo no encontrado.");
+  }
+  return deleted;
 }
 
 export async function reviewVehicleDocumentCore(

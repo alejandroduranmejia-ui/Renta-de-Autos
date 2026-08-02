@@ -11,6 +11,23 @@
 // Ambas funciones trabajan sobre el calendario local, que es el único que le importa a alguien
 // eligiendo fechas de renta en su propia ciudad.
 
+// El piloto opera en una sola ciudad (blueprint.md §1: multi-ciudad es non-goal), así que la zona
+// horaria del vehículo es una constante. Vivía escrita a mano dentro de `createBookingCore`.
+export const VEHICLE_TIMEZONE = "America/Bogota";
+
+/** Límite de un día del calendario, expresado como instante UTC de esos mismos componentes.
+ *
+ * Es la convención que ya usa `computeSlots` para decidir si una excepción tapa un día
+ * (`Date.UTC(year, month-1, day)`), así que las excepciones que escribimos tienen que usar la
+ * misma o el bloqueo se corre a los días vecinos. */
+export function utcDayBounds(isoDate: string) {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return {
+    startsAt: new Date(Date.UTC(year, month - 1, day, 0, 0, 0)),
+    endsAt: new Date(Date.UTC(year, month - 1, day + 1, 0, 0, 0)),
+  };
+}
+
 export function toIsoDate(date: Date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
