@@ -2,12 +2,15 @@ import {
   and,
   asc,
   count,
+  desc,
   eq,
   gte,
   inArray,
+  isNotNull,
   isNull,
   lte,
   notExists,
+  type SQL,
 } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -30,15 +33,39 @@ export type ActiveVehicleListing = {
   seats: number;
   dailyPriceCents: number;
   currency: string;
+  zone: string | null;
+  vehicleType: string | null;
+  transmission: string | null;
+  fuelType: string | null;
   photoUrl: string | null;
 };
+
+export type VehicleSort = "precio_asc" | "precio_desc" | "recientes";
 
 export type VehicleListingFilters = {
   from?: Date;
   to?: Date;
   minPriceCents?: number;
   maxPriceCents?: number;
+  zone?: string;
+  vehicleTypes?: string[];
+  transmission?: string;
+  fuelTypes?: string[];
+  minSeats?: number;
+  sort?: VehicleSort;
+  page?: number;
+  perPage?: number;
 };
+
+export type VehicleListingPage = {
+  items: ActiveVehicleListing[];
+  total: number;
+  page: number;
+  perPage: number;
+  pageCount: number;
+};
+
+export const DEFAULT_PER_PAGE = 12;
 
 async function attachFirstPhoto<T extends { id: string }>(
   rows: T[],
@@ -76,9 +103,17 @@ async function attachFirstPhoto<T extends { id: string }>(
   });
 }
 
+const ORDER_BY: Record<VehicleSort, () => SQL> = {
+  // Por defecto, más barato primero. Antes era `createdAt asc` — el vehículo publicado hace más
+  // tiempo primero, que no es un criterio útil para quien busca.
+  precio_asc: () => asc(vehicles.dailyPriceCents),
+  precio_desc: () => desc(vehicles.dailyPriceCents),
+  recientes: () => desc(vehicles.createdAt),
+};
+
 export async function listActiveVehicles(
   filters: VehicleListingFilters = {},
-): Promise<ActiveVehicleListing[]> {
+): Promise<VehicleListingPage> {
   const conditions = [
     eq(vehicles.status, "active"),
     isNull(vehicles.deletedAt),
@@ -89,6 +124,21 @@ export async function listActiveVehicles(
   }
   if (filters.maxPriceCents !== undefined) {
     conditions.push(lte(vehicles.dailyPriceCents, filters.maxPriceCents));
+  }
+  if (filters.zone) {
+    conditions.push(eq(vehicles.zone, filters.zone));
+  }
+  if (filters.vehicleTypes?.length) {
+    conditions.push(inArray(vehicles.vehicleType, filters.vehicleTypes));
+  }
+  if (filters.transmission) {
+    conditions.push(eq(vehicles.transmission, filters.transmission));
+  }
+  if (filters.fuelTypes?.length) {
+    conditions.push(inArray(vehicles.fuelType, filters.fuelTypes));
+  }
+  if (filters.minSeats !== undefined) {
+    conditions.push(gte(vehicles.seats, filters.minSeats));
   }
   if (filters.from && filters.to) {
     const { from, to } = filters;
@@ -112,6 +162,16 @@ export async function listActiveVehicles(
     );
   }
 
+  const where = and(...conditions);
+  const perPage = filters.perPage ?? DEFAULT_PER_PAGE;
+  const page = Math.max(1, filters.page ?? 1);
+
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(vehicles)
+    .where(where);
+  const total = totalRow?.value ?? 0;
+
   const activeVehicles = await db
     .select({
       id: vehicles.id,
@@ -122,12 +182,42 @@ export async function listActiveVehicles(
       seats: vehicles.seats,
       dailyPriceCents: vehicles.dailyPriceCents,
       currency: vehicles.currency,
+      zone: vehicles.zone,
+      vehicleType: vehicles.vehicleType,
+      transmission: vehicles.transmission,
+      fuelType: vehicles.fuelType,
     })
     .from(vehicles)
-    .where(and(...conditions))
-    .orderBy(asc(vehicles.createdAt));
+    .where(where)
+    .orderBy(ORDER_BY[filters.sort ?? "precio_asc"]())
+    .limit(perPage)
+    .offset((page - 1) * perPage);
 
-  return attachFirstPhoto(activeVehicles);
+  return {
+    items: await attachFirstPhoto(activeVehicles),
+    total,
+    page,
+    perPage,
+    pageCount: Math.max(1, Math.ceil(total / perPage)),
+  };
+}
+
+// Zonas que hoy tienen al menos un vehículo activo. Alimenta el desplegable de búsqueda: ofrecer
+// una zona sin resultados es una vía muerta garantizada.
+export async function listActiveZones(): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ zone: vehicles.zone })
+    .from(vehicles)
+    .where(
+      and(
+        eq(vehicles.status, "active"),
+        isNull(vehicles.deletedAt),
+        isNotNull(vehicles.zone),
+      ),
+    )
+    .orderBy(asc(vehicles.zone));
+
+  return rows.map((row) => row.zone).filter((zone): zone is string => !!zone);
 }
 
 // Datos públicos del dueño. Nunca incluye correo ni teléfono — eso solo se comparte por el chat
@@ -158,6 +248,11 @@ export type VehicleDetail = {
   dailyPriceCents: number;
   currency: string;
   description: string | null;
+  zone: string | null;
+  pickupNotes: string | null;
+  vehicleType: string | null;
+  transmission: string | null;
+  fuelType: string | null;
   photoUrls: string[];
   host: VehicleHost;
   verification: VehicleVerification;
@@ -177,6 +272,11 @@ export async function getVehicleDetail(
       dailyPriceCents: vehicles.dailyPriceCents,
       currency: vehicles.currency,
       description: vehicles.description,
+      zone: vehicles.zone,
+      pickupNotes: vehicles.pickupNotes,
+      vehicleType: vehicles.vehicleType,
+      transmission: vehicles.transmission,
+      fuelType: vehicles.fuelType,
       ownerId: vehicles.ownerId,
       hostFullName: users.fullName,
       hostAvatarUrl: users.avatarUrl,

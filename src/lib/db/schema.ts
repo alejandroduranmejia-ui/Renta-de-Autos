@@ -83,6 +83,17 @@ export const vehicles = pgTable(
     dailyPriceCents: integer("daily_price_cents").notNull(),
     currency: text("currency").notNull().default("COP"),
     description: text("description"),
+    // Campos de descubrimiento — nullable a propósito: los vehículos ya publicados no tienen estos
+    // datos y no se inventan por backfill. La UI trata null como "sin especificar" y el filtro
+    // correspondiente simplemente no los alcanza.
+    //
+    // `zone` es el barrio/sector DENTRO de la única ciudad del piloto, no una segunda ciudad —
+    // multi-ciudad sigue siendo non-goal (blueprint.md §1).
+    zone: text("zone"),
+    pickupNotes: text("pickup_notes"),
+    vehicleType: text("vehicle_type"),
+    transmission: text("transmission"),
+    fuelType: text("fuel_type"),
     status: text("status").notNull().default("draft"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -97,9 +108,27 @@ export const vehicles = pgTable(
     index("idx_vehicles_status")
       .on(t.status)
       .where(sql`${t.status} = 'active'`),
+    // Índices de descubrimiento: la lista pública filtra y ordena por estas dos columnas en cada
+    // búsqueda, siempre acotada a `status = 'active'`.
+    index("idx_vehicles_zone").on(t.zone).where(sql`${t.status} = 'active'`),
+    index("idx_vehicles_daily_price")
+      .on(t.dailyPriceCents)
+      .where(sql`${t.status} = 'active'`),
     check(
       "chk_vehicle_status",
       sql`${t.status} in ('draft','pending_review','active','inactive','rejected')`,
+    ),
+    check(
+      "chk_vehicle_type",
+      sql`${t.vehicleType} is null or ${t.vehicleType} in ('sedan','suv','hatchback','pickup','van','camioneta','deportivo')`,
+    ),
+    check(
+      "chk_vehicle_transmission",
+      sql`${t.transmission} is null or ${t.transmission} in ('automatica','mecanica')`,
+    ),
+    check(
+      "chk_vehicle_fuel_type",
+      sql`${t.fuelType} is null or ${t.fuelType} in ('gasolina','diesel','hibrido','electrico','gas')`,
     ),
   ],
 );

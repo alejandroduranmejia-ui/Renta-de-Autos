@@ -1,8 +1,9 @@
 import { ArrowRight, Car, Search, ShieldCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { HeroSearch } from "@/components/vehicles/hero-search";
 import { VehicleCard } from "@/components/vehicles/vehicle-card";
-import { listActiveVehicles } from "@/server/vehicles/queries";
+import { listActiveVehicles, listActiveZones } from "@/server/vehicles/queries";
 
 const STEPS = [
   {
@@ -25,7 +26,10 @@ const STEPS = [
 ];
 
 export default async function HomePage() {
-  const featured = (await listActiveVehicles()).slice(0, 6);
+  const [{ items: featured }, zones] = await Promise.all([
+    listActiveVehicles({ perPage: 6 }),
+    listActiveZones(),
+  ]);
 
   return (
     <div className="flex flex-1 flex-col">
@@ -50,10 +54,14 @@ export default async function HomePage() {
           Un marketplace local entre personas que se conocen — identidad y
           documentos verificados antes de publicar o reservar.
         </p>
-        <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button size="lg" asChild className="h-11 px-6 text-base">
+        <div className="mt-10">
+          <HeroSearch zones={zones} />
+        </div>
+
+        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <Button variant="link" asChild className="text-base">
             <Link href="/vehiculos">
-              Ver vehículos disponibles
+              Ver todos los vehículos
               <ArrowRight className="size-4" />
             </Link>
           </Button>

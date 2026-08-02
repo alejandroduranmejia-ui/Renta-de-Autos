@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { VehicleDiscoveryFields } from "@/components/vehicles/vehicle-fields";
 import { createVehicle } from "@/server/vehicles/mutations";
 
 export default function NuevoVehiculoPage() {
@@ -51,6 +52,8 @@ export default function NuevoVehiculoPage() {
             className="min-h-24 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
           />
         </div>
+
+        <VehicleDiscoveryFields />
         <Button type="submit" className="mt-2 h-10">
           Crear
         </Button>

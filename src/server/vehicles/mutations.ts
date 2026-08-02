@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import {
+  FUEL_TYPE_KEYS,
+  TRANSMISSION_KEYS,
+  VEHICLE_TYPE_KEYS,
+} from "@/lib/vehicle-taxonomy";
 import { requireAdmin, requireUser } from "@/server/auth/guards";
 import {
   activateVehicleCore,
@@ -27,7 +32,19 @@ const createSchema = z.object({
   seats: z.coerce.number().int().min(1).max(20),
   dailyPriceCents: z.coerce.number().int().min(1),
   description: z.string().optional(),
+  // Campos de descubrimiento — opcionales, y sus valores permitidos son exactamente los de los
+  // `check` constraints de la tabla (src/lib/vehicle-taxonomy.ts es la fuente compartida).
+  zone: z.string().min(1).optional(),
+  pickupNotes: z.string().optional(),
+  vehicleType: z.enum(VEHICLE_TYPE_KEYS).optional(),
+  transmission: z.enum(TRANSMISSION_KEYS).optional(),
+  fuelType: z.enum(FUEL_TYPE_KEYS).optional(),
 });
+
+/** Los `<select>` vacíos mandan "" y Zod los rechazaría — se normalizan a undefined. */
+function optional(formData: FormData, key: string) {
+  return (formData.get(key) as string | null) || undefined;
+}
 
 export async function createVehicle(formData: FormData) {
   const actor = await requireUser();
@@ -39,7 +56,12 @@ export async function createVehicle(formData: FormData) {
     color: formData.get("color"),
     seats: formData.get("seats"),
     dailyPriceCents: formData.get("dailyPriceCents"),
-    description: formData.get("description") || undefined,
+    description: optional(formData, "description"),
+    zone: optional(formData, "zone"),
+    pickupNotes: optional(formData, "pickupNotes"),
+    vehicleType: optional(formData, "vehicleType"),
+    transmission: optional(formData, "transmission"),
+    fuelType: optional(formData, "fuelType"),
   });
 
   const created = await createVehicleCore(actor, parsed);
@@ -100,14 +122,19 @@ export async function updateVehicle(formData: FormData) {
   const actor = await requireUser();
   const vehicleId = z.string().uuid().parse(formData.get("vehicleId"));
   const parsed = createSchema.partial().parse({
-    make: formData.get("make") || undefined,
-    model: formData.get("model") || undefined,
-    year: formData.get("year") || undefined,
-    plate: formData.get("plate") || undefined,
-    color: formData.get("color") || undefined,
-    seats: formData.get("seats") || undefined,
-    dailyPriceCents: formData.get("dailyPriceCents") || undefined,
-    description: formData.get("description") || undefined,
+    make: optional(formData, "make"),
+    model: optional(formData, "model"),
+    year: optional(formData, "year"),
+    plate: optional(formData, "plate"),
+    color: optional(formData, "color"),
+    seats: optional(formData, "seats"),
+    dailyPriceCents: optional(formData, "dailyPriceCents"),
+    description: optional(formData, "description"),
+    zone: optional(formData, "zone"),
+    pickupNotes: optional(formData, "pickupNotes"),
+    vehicleType: optional(formData, "vehicleType"),
+    transmission: optional(formData, "transmission"),
+    fuelType: optional(formData, "fuelType"),
   });
   await updateVehicleCore(actor, vehicleId, parsed);
   redirect(`/mis-vehiculos/${vehicleId}/editar?guardado=1`);

@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { VehicleDiscoveryFields } from "@/components/vehicles/vehicle-fields";
 import { db } from "@/lib/db";
 import { vehicleDocuments, vehiclePhotos, vehicles } from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
@@ -106,6 +107,7 @@ export default async function EditarVehiculoPage({
             className="min-h-24 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
           />
         </div>
+        <VehicleDiscoveryFields defaults={vehicle} />
         <Button type="submit" variant="outline" className="self-start">
           Guardar cambios
         </Button>

@@ -28,6 +28,16 @@ async function getOwnedVehicleOrThrow(actor: Actor, vehicleId: string) {
   return vehicle;
 }
 
+// Campos de descubrimiento agregados en la migración 0004 — opcionales en todas las capas: los
+// vehículos publicados antes no los tienen y no se inventan.
+type DiscoveryFields = {
+  zone?: string;
+  pickupNotes?: string;
+  vehicleType?: string;
+  transmission?: string;
+  fuelType?: string;
+};
+
 export async function createVehicleCore(
   actor: Actor,
   params: {
@@ -40,7 +50,7 @@ export async function createVehicleCore(
     dailyPriceCents: number;
     currency?: string;
     description?: string;
-  },
+  } & DiscoveryFields,
 ) {
   const [created] = await db
     .insert(vehicles)
@@ -55,6 +65,11 @@ export async function createVehicleCore(
       dailyPriceCents: params.dailyPriceCents,
       currency: params.currency ?? "COP",
       description: params.description,
+      zone: params.zone,
+      pickupNotes: params.pickupNotes,
+      vehicleType: params.vehicleType,
+      transmission: params.transmission,
+      fuelType: params.fuelType,
       // "pending_review" desde que se crea — no hay un paso separado de "borrador sin enviar" en
       // este proyecto; queda esperando identidad + documentos aprobados para pasar a "active".
       status: "pending_review",
@@ -75,7 +90,8 @@ export async function updateVehicleCore(
     seats: number;
     dailyPriceCents: number;
     description: string;
-  }>,
+  }> &
+    DiscoveryFields,
 ) {
   await getOwnedVehicleOrThrow(actor, vehicleId);
   const [updated] = await db

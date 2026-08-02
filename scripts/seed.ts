@@ -80,6 +80,11 @@ async function seed() {
     dailyPriceCents: 120_000,
     currency: "COP",
     description: "Vehículo de ejemplo creado por el seed.",
+    zone: "Chapinero",
+    pickupNotes: "Frente al portal, parqueadero de visitantes.",
+    vehicleType: "sedan",
+    transmission: "automatica",
+    fuelType: "gasolina",
     status: "active",
   });
 

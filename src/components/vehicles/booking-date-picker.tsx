@@ -10,13 +10,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { toIsoDate } from "@/lib/date";
 import { formatPriceCents } from "@/lib/format";
 import { quoteBooking } from "@/lib/pricing";
 import { createBooking } from "@/server/bookings/mutations";
-
-function toIsoDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
 
 function formatShort(date: Date) {
   return date.toLocaleDateString("es-CO", { day: "numeric", month: "short" });
