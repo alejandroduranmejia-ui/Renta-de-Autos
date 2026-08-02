@@ -98,13 +98,24 @@ Tokens definidos una vez en `src/app/globals.css`. Los componentes solo referenc
 
 - **Tipografía:** `-apple-system, "SF Pro Display", "Helvetica Neue", Arial, sans-serif` — stack del
   sistema, sin descarga de fuente por red.
-- **Escala:** 12 / 14 / 16 / 20 / 24 / 32 / 40px.
+- **Escala:** 12 / 14 / 16 / 20 / 24 / 32 / 40px para UI general; los momentos "hero" (portada,
+  encabezado de una página de detalle) pueden llevar tipografía `Display` a mayor escala aún
+  (hasta ~64px en desktop) para dar impacto visual — decisión del 2026-08-01, ver nota abajo.
 - **Espaciado:** base 4px — 4, 8, 12, 16, 24, 32, 48, 64, 96. Sin valores arbitrarios.
 - **Radio:** 12px inputs/botones, 20px tarjetas, full (`9999px`) avatares/pills.
-- **Elevación:** `0 1px 2px rgba(0,0,0,.04)` reposo, `0 8px 24px rgba(0,0,0,.08)` flotante.
+- **Elevación:** `0 1px 2px rgba(0,0,0,.04)` reposo, `0 8px 24px rgba(0,0,0,.08)` flotante; hover
+  en tarjetas puede subir un nivel de elevación con una transición suave.
 - **Movimiento:** 200-250ms, `cubic-bezier(.4,0,.2,1)`. Solo `transform`/`opacity`. Respeta
   `prefers-reduced-motion`.
-- **Layout:** ancho máximo 1120px; breakpoints 480/768/1024/1280px; mobile-first.
+- **Layout:** ancho máximo 1120px (6xl en las páginas nuevas de descubrimiento); breakpoints
+  480/768/1024/1280px; mobile-first.
+
+**Nota (2026-08-01):** la regla original "nada de gradientes decorativos, nada de iconografía
+ilustrativa" (blueprint.md §7) se relaja a pedido explícito del dueño del producto tras ver el
+resultado en producción — lo sintió demasiado plano para convencer a un usuario nuevo. Se permite
+un degradado sutil de marca (blobs difuminados en `--primary`) en secciones "hero" puntuales, y
+tipografía de mayor escala en esos mismos momentos. Sigue sin haber iconografía ilustrativa fuera
+de `lucide-react`, y el resto del sistema (colores, radios, un solo acento azul) no cambia.
 
 ## Environment
 

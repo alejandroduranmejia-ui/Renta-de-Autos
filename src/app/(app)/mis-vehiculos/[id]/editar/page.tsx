@@ -1,5 +1,17 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { db } from "@/lib/db";
 import { vehicleDocuments, vehiclePhotos, vehicles } from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
@@ -18,6 +30,15 @@ const ERROR_MESSAGES: Record<string, string> = {
   payouts_not_enabled:
     "Tu cuenta de pagos todavía no está lista para recibir transferencias.",
   archivo_requerido: "Selecciona un archivo.",
+};
+
+const DOCUMENT_STATUS_VARIANT: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  pending: "secondary",
+  approved: "default",
+  rejected: "destructive",
 };
 
 export default async function EditarVehiculoPage({
@@ -55,9 +76,7 @@ export default async function EditarVehiculoPage({
         <h1 className="text-xl font-semibold text-foreground">
           {vehicle.make} {vehicle.model}
         </h1>
-        <span className="rounded-full bg-muted px-3 py-1 text-xs">
-          {vehicle.status}
-        </span>
+        <Badge variant="secondary">{vehicle.status}</Badge>
       </div>
 
       {guardado && <p className="text-sm text-success">Guardado.</p>}
@@ -67,102 +86,112 @@ export default async function EditarVehiculoPage({
         </p>
       )}
 
-      <form action={updateVehicle} className="flex flex-col gap-3">
+      <form action={updateVehicle} className="flex flex-col gap-4">
         <input type="hidden" name="vehicleId" value={vehicle.id} />
-        <label className="flex flex-col gap-1 text-sm">
-          Precio por día (COP)
-          <input
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="dailyPriceCents">Precio por día (COP)</Label>
+          <Input
+            id="dailyPriceCents"
             type="number"
             name="dailyPriceCents"
             defaultValue={vehicle.dailyPriceCents}
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Descripción
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="description">Descripción</Label>
           <textarea
+            id="description"
             name="description"
             defaultValue={vehicle.description ?? ""}
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
+            className="min-h-24 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
           />
-        </label>
-        <button
-          type="submit"
-          className="rounded-xl border border-input px-4 py-2 text-sm font-medium"
-        >
+        </div>
+        <Button type="submit" variant="outline" className="self-start">
           Guardar cambios
-        </button>
+        </Button>
       </form>
 
+      <Separator />
+
       <section className="flex flex-col gap-3">
-        <h2 className="font-medium">Fotos ({photos.length})</h2>
+        <h2 className="font-medium text-foreground">Fotos ({photos.length})</h2>
         <form action={addVehiclePhoto} className="flex flex-col gap-2">
           <input type="hidden" name="vehicleId" value={vehicle.id} />
-          <input type="file" name="file" accept="image/*" required />
-          <button
+          <Input type="file" name="file" accept="image/*" required />
+          <Button
             type="submit"
-            className="self-start rounded-lg border border-input px-3 py-1.5 text-sm"
+            variant="outline"
+            size="sm"
+            className="self-start"
           >
             Subir foto
-          </button>
+          </Button>
         </form>
       </section>
 
+      <Separator />
+
       <section className="flex flex-col gap-3">
-        <h2 className="font-medium">Documentos</h2>
-        <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
+        <h2 className="font-medium text-foreground">Documentos</h2>
+        <ul className="flex flex-col gap-1.5 text-sm">
           {documents.map((d) => (
-            <li key={d.id}>
-              {d.documentType}: {d.status}
+            <li key={d.id} className="flex items-center gap-2">
+              <span className="text-muted-foreground">{d.documentType}</span>
+              <Badge variant={DOCUMENT_STATUS_VARIANT[d.status]}>
+                {d.status}
+              </Badge>
             </li>
           ))}
         </ul>
         <form action={addVehicleDocument} className="flex flex-col gap-2">
           <input type="hidden" name="vehicleId" value={vehicle.id} />
-          <select
+          <Select
             name="documentType"
             required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
+            defaultValue="tarjeta_circulacion"
           >
-            <option value="tarjeta_circulacion">Tarjeta de circulación</option>
-            <option value="poliza_seguro">Póliza de seguro</option>
-          </select>
-          <input
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="tarjeta_circulacion">
+                Tarjeta de circulación
+              </SelectItem>
+              <SelectItem value="poliza_seguro">Póliza de seguro</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input
             type="file"
             name="file"
             accept="image/*,application/pdf"
             required
           />
-          <button
+          <Button
             type="submit"
-            className="self-start rounded-lg border border-input px-3 py-1.5 text-sm"
+            variant="outline"
+            size="sm"
+            className="self-start"
           >
             Subir documento
-          </button>
+          </Button>
         </form>
       </section>
+
+      <Separator />
 
       <div className="flex gap-3">
         {vehicle.status !== "active" && (
           <form action={activateVehicle}>
             <input type="hidden" name="vehicleId" value={vehicle.id} />
-            <button
-              type="submit"
-              className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-            >
-              Activar publicación
-            </button>
+            <Button type="submit">Activar publicación</Button>
           </form>
         )}
         {vehicle.status !== "inactive" && (
           <form action={deactivateVehicle}>
             <input type="hidden" name="vehicleId" value={vehicle.id} />
-            <button
-              type="submit"
-              className="rounded-xl border border-input px-4 py-2 text-sm"
-            >
+            <Button type="submit" variant="outline">
               Desactivar
-            </button>
+            </Button>
           </form>
         )}
       </div>

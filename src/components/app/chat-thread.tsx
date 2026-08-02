@@ -36,39 +36,42 @@ export function ChatThread({
     // Realtime valida el rol de la conexión (RLS) contra los claims del `access_token` en el
     // instante exacto del join — si se suscribe antes de que la sesión termine de hidratarse
     // desde la cookie, el primer join sale sin token (rol `anon`, sin grant sobre `messages`) y
-    // Realtime lo rechaza para siempre, sin reintentar solo porque `setAuth` llegue después
-    // (verificado en vivo: `getSession()` seguido de `subscribe()` en el mismo tick reproducía
-    // el rechazo de forma determinista). Esperar la sesión y fijar el auth ANTES de suscribirse
-    // evita esa carrera.
-    supabase.auth.getSession().then(({ data }) => {
-      if (cancelled) return;
-      if (data.session) {
-        supabase.realtime.setAuth(data.session.access_token);
-      }
-      channel = supabase
-        .channel(`messages:booking:${bookingId}`)
-        .on(
-          "postgres_changes",
-          {
-            event: "INSERT",
-            schema: "public",
-            table: "messages",
-            filter: `booking_id=eq.${bookingId}`,
-          },
-          (payload) => {
-            const incoming = payload.new as Message;
-            setMessages((current) =>
-              current.some((m) => m.id === incoming.id)
-                ? current
-                : [...current, incoming],
-            );
-          },
-        )
-        .subscribe();
-    });
+    // Realtime lo rechaza para siempre, sin reintentar solo porque `setAuth` llegue después. Un
+    // solo `getSession()` puede resolver con `session: null` incluso con una cookie válida si se
+    // llama antes de que el cliente termine de hidratarla — `onAuthStateChange` es el patrón que
+    // Supabase recomienda para esto: dispara con el estado ya resuelto (evento inicial) y de
+    // nuevo ante cualquier cambio, así que esperamos a la primera vez que traiga una sesión real
+    // antes de suscribirnos, en vez de decidir en un único punto en el tiempo.
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (cancelled || channel || !session) return;
+        supabase.realtime.setAuth(session.access_token);
+        channel = supabase
+          .channel(`messages:booking:${bookingId}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "messages",
+              filter: `booking_id=eq.${bookingId}`,
+            },
+            (payload) => {
+              const incoming = payload.new as Message;
+              setMessages((current) =>
+                current.some((m) => m.id === incoming.id)
+                  ? current
+                  : [...current, incoming],
+              );
+            },
+          )
+          .subscribe();
+      },
+    );
 
     return () => {
       cancelled = true;
+      authListener.subscription.unsubscribe();
       if (channel) supabase.removeChannel(channel);
     };
   }, [bookingId]);

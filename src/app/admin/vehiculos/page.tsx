@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { vehicleDocuments, vehicles } from "@/lib/db/schema";
 import { reviewVehicleDocument } from "@/server/vehicles/mutations";
@@ -32,10 +33,10 @@ export default async function AdminVehiculosPage() {
           {pending.map((d) => (
             <li
               key={d.id}
-              className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
+              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
             >
               <div>
-                <p className="font-medium">
+                <p className="font-medium text-card-foreground">
                   {d.make} {d.model} ({d.plate})
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -46,22 +47,20 @@ export default async function AdminVehiculosPage() {
                 <form action={reviewVehicleDocument}>
                   <input type="hidden" name="documentId" value={d.id} />
                   <input type="hidden" name="decision" value="approved" />
-                  <button
+                  <Button
                     type="submit"
-                    className="rounded-lg bg-success px-3 py-1.5 text-sm font-medium text-success-foreground"
+                    size="sm"
+                    className="bg-success text-success-foreground hover:bg-success/80"
                   >
                     Aprobar
-                  </button>
+                  </Button>
                 </form>
                 <form action={reviewVehicleDocument}>
                   <input type="hidden" name="documentId" value={d.id} />
                   <input type="hidden" name="decision" value="rejected" />
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-destructive px-3 py-1.5 text-sm font-medium text-white"
-                  >
+                  <Button type="submit" size="sm" variant="destructive">
                     Rechazar
-                  </button>
+                  </Button>
                 </form>
               </div>
             </li>

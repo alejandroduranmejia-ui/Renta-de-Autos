@@ -1,9 +1,23 @@
 import { eq } from "drizzle-orm";
+import { ChevronRight } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { connectedAccounts, vehicles } from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
 import { startConnectOnboarding } from "@/server/payments/mutations";
+
+const STATUS_VARIANT: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  draft: "outline",
+  pending_review: "secondary",
+  active: "default",
+  inactive: "outline",
+  rejected: "destructive",
+};
 
 export default async function MisVehiculosPage() {
   const actor = await requireUser();
@@ -21,28 +35,22 @@ export default async function MisVehiculosPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold text-foreground">Mis vehículos</h1>
-        <Link
-          href="/mis-vehiculos/nuevo"
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Publicar vehículo
-        </Link>
+        <Button asChild>
+          <Link href="/mis-vehiculos/nuevo">Publicar vehículo</Link>
+        </Button>
       </div>
 
       {!connected?.payoutsEnabled && (
         <form
           action={startConnectOnboarding}
-          className="rounded-xl border border-border px-4 py-3"
+          className="rounded-2xl border border-border bg-card px-4 py-3"
         >
           <p className="mb-2 text-sm text-muted-foreground">
             Para recibir pagos, primero configura tu cuenta de pagos.
           </p>
-          <button
-            type="submit"
-            className="rounded-lg border border-input px-3 py-1.5 text-sm"
-          >
+          <Button type="submit" variant="outline" size="sm">
             Configurar pagos
-          </button>
+          </Button>
         </form>
       )}
 
@@ -56,13 +64,14 @@ export default async function MisVehiculosPage() {
             <li key={v.id}>
               <Link
                 href={`/mis-vehiculos/${v.id}/editar`}
-                className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
+                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted"
               >
-                <span>
+                <span className="font-medium text-card-foreground">
                   {v.make} {v.model} ({v.year})
                 </span>
-                <span className="text-sm text-muted-foreground">
-                  {v.status}
+                <span className="flex items-center gap-2">
+                  <Badge variant={STATUS_VARIANT[v.status]}>{v.status}</Badge>
+                  <ChevronRight className="size-4 text-muted-foreground" />
                 </span>
               </Link>
             </li>

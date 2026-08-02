@@ -1,4 +1,15 @@
 import { eq } from "drizzle-orm";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { db } from "@/lib/db";
 import { identityVerifications } from "@/lib/db/schema";
 import { requireUser } from "@/server/auth/guards";
@@ -7,6 +18,15 @@ import { submitVerification } from "@/server/identity/mutations";
 const ERROR_MESSAGES: Record<string, string> = {
   archivo_requerido: "Sube una foto de tu documento.",
   archivo_muy_grande: "El archivo no puede pesar más de 10MB.",
+};
+
+const STATUS_VARIANT: Record<
+  string,
+  "default" | "secondary" | "outline" | "destructive"
+> = {
+  pending: "secondary",
+  approved: "default",
+  rejected: "destructive",
 };
 
 export default async function VerificacionPage({
@@ -31,12 +51,13 @@ export default async function VerificacionPage({
       </h1>
 
       {latest && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-          Estado actual: <strong>{latest.status}</strong>
+        <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
+          <span>Estado actual:</span>
+          <Badge variant={STATUS_VARIANT[latest.status]}>{latest.status}</Badge>
           {latest.status === "rejected" && latest.rejectionReason
             ? ` — ${latest.rejectionReason}`
             : null}
-        </p>
+        </div>
       )}
 
       {enviado && (
@@ -50,28 +71,26 @@ export default async function VerificacionPage({
         </p>
       )}
 
-      <form action={submitVerification} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Tipo de documento
-          <select
-            name="documentType"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          >
-            <option value="cedula">Cédula</option>
-            <option value="licencia">Licencia de conducir</option>
-          </select>
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Foto del documento
-          <input type="file" name="file" accept="image/*" required />
-        </label>
-        <button
-          type="submit"
-          className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
+      <form action={submitVerification} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label>Tipo de documento</Label>
+          <Select name="documentType" required defaultValue="cedula">
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="cedula">Cédula</SelectItem>
+              <SelectItem value="licencia">Licencia de conducir</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="file">Foto del documento</Label>
+          <Input id="file" type="file" name="file" accept="image/*" required />
+        </div>
+        <Button type="submit" className="mt-2 h-10">
           Enviar para revisión
-        </button>
+        </Button>
       </form>
     </div>
   );

@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { identityVerifications, users } from "@/lib/db/schema";
 import { reviewVerification } from "@/server/identity/mutations";
@@ -31,10 +32,10 @@ export default async function AdminVerificacionesPage() {
           {pending.map((v) => (
             <li
               key={v.id}
-              className="flex items-center justify-between rounded-xl border border-border px-4 py-3"
+              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
             >
               <div>
-                <p className="font-medium">{v.userName}</p>
+                <p className="font-medium text-card-foreground">{v.userName}</p>
                 <p className="text-sm text-muted-foreground">
                   {v.userEmail} — {v.documentType}
                 </p>
@@ -43,12 +44,13 @@ export default async function AdminVerificacionesPage() {
                 <form action={reviewVerification}>
                   <input type="hidden" name="verificationId" value={v.id} />
                   <input type="hidden" name="decision" value="approved" />
-                  <button
+                  <Button
                     type="submit"
-                    className="rounded-lg bg-success px-3 py-1.5 text-sm font-medium text-success-foreground"
+                    size="sm"
+                    className="bg-success text-success-foreground hover:bg-success/80"
                   >
                     Aprobar
-                  </button>
+                  </Button>
                 </form>
                 <form action={reviewVerification}>
                   <input type="hidden" name="verificationId" value={v.id} />
@@ -58,12 +60,9 @@ export default async function AdminVerificacionesPage() {
                     name="rejectionReason"
                     value="Documento ilegible o inválido"
                   />
-                  <button
-                    type="submit"
-                    className="rounded-lg bg-destructive px-3 py-1.5 text-sm font-medium text-white"
-                  >
+                  <Button type="submit" size="sm" variant="destructive">
                     Rechazar
-                  </button>
+                  </Button>
                 </form>
               </div>
             </li>

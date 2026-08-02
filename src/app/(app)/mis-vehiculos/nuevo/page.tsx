@@ -1,3 +1,6 @@
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { createVehicle } from "@/server/vehicles/mutations";
 
 export default function NuevoVehiculoPage() {
@@ -6,79 +9,51 @@ export default function NuevoVehiculoPage() {
       <h1 className="text-xl font-semibold text-foreground">
         Publicar vehículo
       </h1>
-      <form action={createVehicle} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1 text-sm">
-          Marca
-          <input
-            name="make"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Modelo
-          <input
-            name="model"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Año
-          <input
-            type="number"
-            name="year"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Placa
-          <input
-            name="plate"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Color
-          <input
-            name="color"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Puestos
-          <input
-            type="number"
-            name="seats"
-            required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Precio por día (COP)
-          <input
+      <form action={createVehicle} className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="make">Marca</Label>
+          <Input id="make" name="make" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="model">Modelo</Label>
+          <Input id="model" name="model" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="year">Año</Label>
+          <Input id="year" type="number" name="year" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="plate">Placa</Label>
+          <Input id="plate" name="plate" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="color">Color</Label>
+          <Input id="color" name="color" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="seats">Puestos</Label>
+          <Input id="seats" type="number" name="seats" required />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="dailyPriceCents">Precio por día (COP)</Label>
+          <Input
+            id="dailyPriceCents"
             type="number"
             name="dailyPriceCents"
             required
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
           />
-        </label>
-        <label className="flex flex-col gap-1 text-sm">
-          Descripción
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="description">Descripción</Label>
           <textarea
+            id="description"
             name="description"
-            className="rounded-lg border border-input bg-transparent px-3 py-2"
+            className="min-h-24 rounded-lg border border-input bg-transparent px-3 py-2 text-sm"
           />
-        </label>
-        <button
-          type="submit"
-          className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
+        </div>
+        <Button type="submit" className="mt-2 h-10">
           Crear
-        </button>
+        </Button>
       </form>
     </div>
   );
