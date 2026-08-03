@@ -42,8 +42,16 @@ en el mismo árbol de `src/server/*`, nunca por un `fetch` de cliente a una ruta
 |---|---|---|
 | `src/app/**` (rutas) | `components`, `server`, `lib` | Importar `db/` directamente |
 | `src/components/**` | `lib`, otros componentes | Importar `server/` o `db/` |
-| `src/server/**` | `db`, `lib` | Importar React o algo de `components/` |
+| `src/server/**` | `db`, `lib` | Importar React o algo de `components/` — única excepción: `cache()` (ver nota abajo) |
 | `src/lib/db/**` | nada interno | Importar `server/` |
+
+**Excepción de la tabla de límites (2026-08-02).** `src/server/vehicles/queries.ts` importa `cache`
+de React. Es la única importación de React permitida en `src/server/**`, y existe porque una página
+con `generateMetadata` ejecuta su consulta **dos veces por petición** (una para la metadata, otra
+para el componente), lo que duplicaba las consultas de la ficha y contribuyó al incidente de
+conexiones agotadas de ese día. `cache()` no necesita el request context de Next.js para
+importarse, así que no rompe los tests de Vitest — que es lo que la regla protege. No se extiende a
+`service.ts` ni a `mutations.ts`.
 
 **Where things live.**
 

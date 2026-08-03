@@ -12,6 +12,7 @@ import {
   notExists,
   type SQL,
 } from "drizzle-orm";
+import { cache } from "react";
 import { VEHICLE_TIMEZONE } from "@/lib/date";
 import { db } from "@/lib/db";
 import {
@@ -352,7 +353,12 @@ export type VehicleDetail = {
   verification: VehicleVerification;
 };
 
-export async function getVehicleDetail(
+// Envuelto en `cache()` de React porque la ficha lo llama DOS veces por petición: una desde
+// `generateMetadata` y otra desde el componente de página. Sin esto son ~10 consultas donde
+// bastan ~5, y el log del incidente del 2026-08-02 mostraba exactamente la misma consulta
+// fallando desde los dos sitios. `cache()` deduplica dentro de una misma petición; entre
+// peticiones distintas no comparte nada, así que no introduce datos rancios.
+export const getVehicleDetail = cache(async function getVehicleDetail(
   id: string,
 ): Promise<VehicleDetail | null> {
   const [vehicle] = await db
@@ -446,4 +452,4 @@ export async function getVehicleDetail(
       ),
     },
   };
-}
+});
