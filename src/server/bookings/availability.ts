@@ -202,7 +202,14 @@ export function computeSlots(params: {
     const busy = existingBookings.some(
       (b) => b.startsAt < closesAt && b.endsAt > opensAt,
     );
-    const tooSoon = opensAt.getTime() - now.getTime() < minNoticeMs;
+    // Se compara contra el CIERRE, no contra la apertura: un día sigue siendo reservable
+    // mientras le quede algún momento en su ventana que cumpla el aviso mínimo.
+    //
+    // Con la apertura, un vehículo sin horario semanal (ventana 00:00–23:59) perdía el día de
+    // mañana cada noche a partir de las 22:00 — la medianoche quedaba a menos de 2 horas, aunque
+    // reservar para mañana al mediodía dé 13 horas de aviso. Como ningún vehículo del piloto
+    // tiene horario configurado todavía, eso bloqueaba el calendario de todos, todas las noches.
+    const tooSoon = closesAt.getTime() - now.getTime() < minNoticeMs;
 
     slots.push({
       date: key,

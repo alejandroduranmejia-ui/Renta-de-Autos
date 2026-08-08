@@ -91,4 +91,37 @@ describe("availability engine", () => {
     expect(tuesday?.available).toBe(false);
     expect(wednesday?.available).toBe(true);
   });
+
+  // Regresión con el reloj fijo. El test de integración que destapó esto solo falla si la suite
+  // corre entre las 22:00 y la medianoche, así que pasó limpio tres veces el mismo día antes de
+  // romperse. Con `now` inyectado, el caso queda cubierto a cualquier hora.
+  it("no bloquea el día siguiente por acercarse la medianoche", () => {
+    // 23:04 del 7 de agosto en Bogotá (UTC-5).
+    const now = new Date("2026-08-08T04:04:00Z");
+    const rules = Array.from({ length: 7 }, (_, weekday) => ({
+      weekday,
+      startTime: "00:00:00",
+      endTime: "23:59:00",
+    }));
+
+    const slots = computeSlots({
+      rules,
+      exceptions: [],
+      existingBookings: [],
+      now,
+      vehicleTimeZone: "America/Bogota",
+      rangeStartDays: 0,
+      rangeEndDays: 2,
+      minNoticeHours: 2,
+    });
+
+    const hoy = slots.find((s) => s.date === "2026-08-07");
+    const manana = slots.find((s) => s.date === "2026-08-08");
+
+    // Hoy ya no da: su ventana cierra en 55 minutos, menos que el aviso mínimo.
+    expect(hoy?.available).toBe(false);
+    // Mañana sí: reservar para mañana al mediodía da 13 horas de aviso, de sobra. Antes se
+    // bloqueaba porque la medianoche —su hora de apertura— quedaba a 56 minutos.
+    expect(manana?.available).toBe(true);
+  });
 });
