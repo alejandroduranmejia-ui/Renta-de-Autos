@@ -24,8 +24,10 @@ export function HostCard({ host }: { host: VehicleHost }) {
       ? "1 renta completada"
       : `${host.completedTrips} rentas completadas`;
 
+  // Sin borde ni fondo propios: los aporta el bloque de confianza que lo envuelve en la ficha,
+  // para que el anfitrión y los sellos de verificación se lean como una sola unidad.
   return (
-    <section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4">
+    <div className="flex items-center gap-4">
       <Avatar className="size-14">
         {host.avatarUrl && <AvatarImage src={host.avatarUrl} alt="" />}
         <AvatarFallback>{initials(host.fullName)}</AvatarFallback>
@@ -40,6 +42,6 @@ export function HostCard({ host }: { host: VehicleHost }) {
           Miembro desde {memberSinceLabel(host.memberSince)}
         </span>
       </div>
-    </section>
+    </div>
   );
 }

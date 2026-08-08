@@ -1,6 +1,6 @@
 import { ArrowRight, Car, Search, ShieldCheck, Sparkles } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { HeroSearch } from "@/components/vehicles/hero-search";
 import { VehicleCard } from "@/components/vehicles/vehicle-card";
 import { listActiveVehicles, listActiveZones } from "@/server/vehicles/queries";
@@ -31,13 +31,37 @@ export default async function HomePage() {
     listActiveZones(),
   ]);
 
+  const heroPhotoUrl = featured.find((v) => v.photoUrl)?.photoUrl ?? null;
+
   return (
     <div className="flex flex-1 flex-col">
-      <section className="relative overflow-hidden px-6 py-28 text-center sm:py-36">
+      {/* Padding inferior menor que el superior: sumado al `py-16` de la sección siguiente dejaba
+          ~225px de vacío entre la llamada a la acción y los tres pasos, que se leía como un error
+          de maquetación más que como aire. */}
+      <section className="relative overflow-hidden px-6 pt-28 pb-16 text-center sm:pt-36 sm:pb-20">
+        {/* La foto del primer vehículo publicado hace de fondo. En un marketplace de autos el
+            producto ES la foto, y la portada no mostraba ninguna: solo texto blanco sobre negro.
+            Se usa contenido real en vez de una imagen de archivo, así que no hay que versionar un
+            asset ni pagar una descarga extra — la foto ya se carga en la grilla de destacados. */}
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
         >
+          {heroPhotoUrl && (
+            <>
+              <Image
+                src={heroPhotoUrl}
+                alt=""
+                fill
+                priority
+                className="object-cover opacity-35"
+              />
+              {/* Doble velo: uno plano para que el texto siempre tenga contraste suficiente, y un
+                  degradado que funde el borde inferior con el fondo de la página. */}
+              <div className="absolute inset-0 bg-background/55" />
+              <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-transparent to-background" />
+            </>
+          )}
           <div className="absolute top-[-10%] left-1/2 h-[36rem] w-[36rem] -translate-x-1/2 rounded-full bg-primary/20 blur-3xl" />
           <div className="absolute top-1/3 left-[10%] h-64 w-64 rounded-full bg-primary/10 blur-3xl" />
           <div className="absolute top-1/4 right-[10%] h-72 w-72 rounded-full bg-primary/10 blur-3xl" />
@@ -58,27 +82,22 @@ export default async function HomePage() {
           <HeroSearch zones={zones} />
         </div>
 
-        <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-          <Button variant="link" asChild className="text-base">
-            <Link href="/vehiculos">
-              Ver todos los vehículos
-              <ArrowRight className="size-4" />
-            </Link>
-          </Button>
-          <Button
-            size="lg"
-            variant="outline"
-            asChild
-            className="h-11 px-6 text-base"
+        {/* Jerarquía por sustracción: el buscador es LA acción del hero. "Ver todos los
+            vehículos" se eliminó porque buscar sin filtros hace exactamente eso, y competía
+            visualmente con el propio buscador. Queda una sola llamada secundaria, para el otro
+            lado del marketplace. */}
+        <p className="mt-6 text-sm text-muted-foreground">
+          ¿Tienes un vehículo parado?{" "}
+          <Link
+            href="/publica-tu-vehiculo"
+            className="font-medium text-foreground underline underline-offset-4 transition-colors hover:text-primary"
           >
-            {/* Landing pública, no la ruta autenticada de alta: un visitante anónimo caía en el
-                login sin saber qué se le iba a pedir. */}
-            <Link href="/publica-tu-vehiculo">Publica tu vehículo</Link>
-          </Button>
-        </div>
+            Ponlo a rentar
+          </Link>
+        </p>
       </section>
 
-      <section className="mx-auto w-full max-w-5xl px-6 py-20">
+      <section className="mx-auto w-full max-w-5xl px-6 py-16">
         <div className="grid gap-10 sm:grid-cols-3">
           {STEPS.map((step) => (
             <div

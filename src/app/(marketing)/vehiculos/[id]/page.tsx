@@ -1,3 +1,4 @@
+import { ImageOff } from "lucide-react";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -67,12 +68,15 @@ export default async function VehicleDetailPage({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-6 py-10">
+      {/* Altura acotada: en 16:9 a 1378px de ancho la galería medía 775px y empujaba el nombre,
+          el precio y el botón de reservar por debajo del pliegue. Ahora el título y la caja de
+          reserva entran en la primera pantalla, como en la ficha de Turo. */}
       {vehicle.photoUrls.length > 0 ? (
         <Carousel className="w-full">
           <CarouselContent>
             {vehicle.photoUrls.map((url) => (
               <CarouselItem key={url}>
-                <div className="relative aspect-video overflow-hidden rounded-2xl bg-muted">
+                <div className="relative h-[clamp(15rem,42vh,26rem)] overflow-hidden rounded-2xl bg-muted">
                   <Image
                     src={url}
                     alt={`${vehicle.make} ${vehicle.model}`}
@@ -95,12 +99,17 @@ export default async function VehicleDetailPage({
           )}
         </Carousel>
       ) : (
-        <div className="flex aspect-video items-center justify-center rounded-2xl bg-muted text-muted-foreground">
-          Sin fotos
+        // Antes era un rectángulo gris gigante y mudo: la misma altura que una galería real, sin
+        // nada dentro salvo la palabra "Sin fotos".
+        <div className="flex h-[clamp(11rem,26vh,16rem)] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-muted/40 text-muted-foreground">
+          <ImageOff className="size-6" />
+          <span className="text-sm">Este vehículo todavía no tiene fotos</span>
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_360px]">
+      {/* `items-start` es lo que permite que la columna derecha sea sticky: sin él, el grid la
+          estira a la altura de la izquierda y no hay nada que fijar. */}
+      <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-[1fr_360px]">
         <div className="flex flex-col gap-6">
           <VehicleHeader vehicle={vehicle} />
 
@@ -110,13 +119,22 @@ export default async function VehicleDetailPage({
             </p>
           )}
 
-          <HostCard host={vehicle.host} />
-          <TrustBadges verification={vehicle.verification} />
+          {/* Un solo bloque de confianza: quién es el dueño y qué verificamos de él van juntos,
+              porque es una sola pregunta del arrendatario, no dos. */}
+          <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+            <HostCard host={vehicle.host} />
+            <div className="border-t border-border pt-4">
+              <TrustBadges verification={vehicle.verification} />
+            </div>
+          </section>
           <VehicleFeatures features={vehicle.features} />
           <BookingPolicies />
         </div>
 
-        <div className="flex flex-col gap-3">
+        {/* Sticky: la columna de contenido mide ~1300px, así que sin esto el precio y el botón
+            de reservar desaparecen en cuanto el usuario baja a leer características o reglas.
+            `top-20` deja hueco para el header, que también es sticky. */}
+        <div className="flex flex-col gap-3 lg:sticky lg:top-20">
           {error && ERROR_MESSAGES[error] && (
             <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {ERROR_MESSAGES[error]}
