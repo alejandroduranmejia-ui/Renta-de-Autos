@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { safeNextPath } from "@/lib/safe-redirect";
 import {
   signInWithGoogleAction,
   signInWithPasswordAction,
@@ -21,7 +22,12 @@ export default async function IniciarSesionPage({
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const { next = "/", error } = await searchParams;
+  const { next: rawNext, error } = await searchParams;
+  // Se sanea también aquí, no solo en la Server Action. La acción ya ignora un destino externo,
+  // así que la redirección era segura — pero sin esto el HTML seguía mostrando
+  // `value="https://sitio-falso.com"` en el campo oculto, lo que hace que el arreglo parezca
+  // ausente al revisarlo desde fuera y deja contenido del atacante reflejado en la página.
+  const next = safeNextPath(rawNext);
 
   return (
     <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center px-6 py-24">
