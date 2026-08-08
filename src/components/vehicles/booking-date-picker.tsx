@@ -55,10 +55,7 @@ export function BookingDatePicker({
       : null;
 
   return (
-    <form
-      action={createBooking}
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5"
-    >
+    <form action={createBooking} className="flex flex-col gap-4 surface p-5">
       <div className="flex items-baseline gap-1">
         <span className="text-xl font-semibold text-foreground">
           {formatPriceCents(dailyPriceCents, currency)}

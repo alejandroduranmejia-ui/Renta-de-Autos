@@ -18,7 +18,7 @@ export function EarningsCalculator() {
   const netCents = grossCents - commissionCents;
 
   return (
-    <div className="flex flex-col gap-6 rounded-2xl border border-border bg-card p-6">
+    <div className="flex flex-col gap-6 surface p-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-baseline justify-between">
           <Label htmlFor="dailyPrice">Tu precio por día</Label>

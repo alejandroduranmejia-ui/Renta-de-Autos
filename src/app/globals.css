@@ -44,6 +44,13 @@
   --color-card: var(--card);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  /* Elevación (blueprint.md §7). En claro es lo que separa una tarjeta del fondo: desde que
+     `--card` es blanco igual que `--background`, el borde solo dibuja el límite y la sombra es la
+     que da la profundidad. En oscuro una sombra no se ve sobre negro, así que ahí manda el borde
+     y `.surface` la anula. */
+  --shadow-resting: 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-raised: 0 1px 2px rgb(0 0 0 / 0.04), 0 6px 20px rgb(0 0 0 / 0.06);
+  --shadow-floating: 0 2px 6px rgb(0 0 0 / 0.05), 0 14px 36px rgb(0 0 0 / 0.1);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -57,7 +64,10 @@
   /* Paleta de blueprint.md §7 — inspirada en apple.com, verificada en vivo el 2026-07-29. */
   --background: #ffffff;
   --foreground: #1d1d1f;
-  --card: #f5f5f7;
+  /* Blanco, no gris: una tarjeta gris sobre fondo blanco se lee como un bloque hundido y apagado.
+     Blanca y elevada se lee como un objeto — el lenguaje de los marketplaces con foto (decisión
+     del 2026-08-07, "dirección B"). */
+  --card: #ffffff;
   --card-foreground: #1d1d1f;
   --popover: #ffffff;
   --popover-foreground: #1d1d1f;
@@ -72,7 +82,9 @@
   --destructive: #d70015;
   --success: #1d7a46;
   --success-foreground: #ffffff;
-  --border: #d2d2d7;
+  /* Más suave que el #d2d2d7 original: con elevación de por medio, un borde marcado compite con
+     la sombra y todo vuelve a verse encajonado. */
+  --border: #e4e4e7;
   --input: #d2d2d7;
   --ring: #0071e3;
   --chart-1: oklch(0.87 0 0);
@@ -125,6 +137,23 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer components {
+  /* Superficie elevada — la usan las 12 tarjetas del sitio. Definida una sola vez aquí para que
+     los componentes solo referencien el nombre, igual que con los colores (CLAUDE.md §Design
+     system). CSS plano a propósito: nada de `@apply` con variantes, que es donde estas
+     abstracciones se rompen en silencio. */
+  .surface {
+    border-radius: var(--radius-2xl);
+    border: 1px solid var(--border);
+    background-color: var(--card);
+    box-shadow: var(--shadow-raised);
+  }
+
+  .dark .surface {
+    box-shadow: none;
+  }
 }
 
 @layer base {

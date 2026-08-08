@@ -33,7 +33,7 @@ export default async function AdminVehiculosPage() {
           {pending.map((d) => (
             <li
               key={d.id}
-              className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3"
+              className="flex items-center justify-between surface px-4 py-3"
             >
               <div>
                 <p className="font-medium text-card-foreground">

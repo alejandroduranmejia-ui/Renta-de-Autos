@@ -121,7 +121,7 @@ export default async function VehicleDetailPage({
 
           {/* Un solo bloque de confianza: quién es el dueño y qué verificamos de él van juntos,
               porque es una sola pregunta del arrendatario, no dos. */}
-          <section className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+          <section className="flex flex-col gap-4 surface p-5">
             <HostCard host={vehicle.host} />
             <div className="border-t border-border pt-4">
               <TrustBadges verification={vehicle.verification} />

@@ -41,10 +41,7 @@ export default async function MisVehiculosPage() {
       </div>
 
       {!connected?.payoutsEnabled && (
-        <form
-          action={startConnectOnboarding}
-          className="rounded-2xl border border-border bg-card px-4 py-3"
-        >
+        <form action={startConnectOnboarding} className="surface px-4 py-3">
           <p className="mb-2 text-sm text-muted-foreground">
             Para recibir pagos, primero configura tu cuenta de pagos.
           </p>
@@ -64,7 +61,7 @@ export default async function MisVehiculosPage() {
             <li key={v.id}>
               <Link
                 href={`/mis-vehiculos/${v.id}/editar`}
-                className="flex items-center justify-between rounded-2xl border border-border bg-card px-4 py-3 transition-colors hover:bg-muted"
+                className="flex items-center justify-between surface px-4 py-3 transition-colors hover:bg-muted"
               >
                 <span className="font-medium text-card-foreground">
                   {v.make} {v.model} ({v.year})

@@ -39,7 +39,7 @@ export function PublicationChecklist({ state }: { state: ChecklistState }) {
   const remaining = items.filter((item) => !item.done).length;
 
   return (
-    <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
+    <section className="flex flex-col gap-3 surface p-4">
       <h2 className="font-medium text-card-foreground">
         {remaining === 0
           ? "Todo listo para activar"

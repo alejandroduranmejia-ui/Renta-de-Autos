@@ -86,7 +86,7 @@ export default function PublicaTuVehiculoPage() {
         <EarningsCalculator />
       </section>
 
-      <section className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-6">
+      <section className="flex flex-col gap-3 surface p-6">
         <h2 className="font-medium text-card-foreground">Cuánto cobramos</h2>
         <p className="text-sm text-muted-foreground">
           La plataforma retiene un {commissionPercent}% de cada renta. Publicar

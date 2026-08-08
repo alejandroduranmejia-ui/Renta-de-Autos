@@ -77,7 +77,7 @@ export default async function MisReservasPage({
           {bookings.map((booking) => (
             <li
               key={booking.id}
-              className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4 sm:flex-row sm:items-center"
+              className="flex flex-col gap-4 surface p-4 sm:flex-row sm:items-center"
             >
               <div className="relative h-24 w-full shrink-0 overflow-hidden rounded-xl bg-muted sm:w-36">
                 {booking.photoUrl && (

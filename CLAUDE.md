@@ -97,8 +97,9 @@ Tokens definidos una vez en `src/app/globals.css`. Los componentes solo referenc
 |---|---|---|---|
 | Primary | `#0071e3` | `#2997ff` | Botones primarios, enlaces, anillo de foco |
 | Background | `#ffffff` | `#000000` | Fondo de página |
-| Surface | `#f5f5f7` | `#1c1c1e` | Tarjetas, paneles |
-| Border | `#d2d2d7` | `#424245` | Divisores, bordes de input |
+| Surface | `#ffffff` | `#1c1c1e` | Tarjetas, paneles |
+| Border | `#e4e4e7` | `#424245` | Divisores, bordes de input |
+| Muted | `#f5f5f7` | `#1c1c1e` | Fondos de foto ausente, estados hover |
 | Text | `#1d1d1f` | `#f5f5f7` | Cuerpo |
 | Muted text | `#6e6e73` | `#86868b` | Texto secundario |
 | Destructive | `#d70015` | `#ff453a` | Errores, rechazo |
@@ -111,6 +112,12 @@ Tokens definidos una vez en `src/app/globals.css`. Los componentes solo referenc
   (hasta ~64px en desktop) para dar impacto visual — decisión del 2026-08-01, ver nota abajo.
 - **Espaciado:** base 4px — 4, 8, 12, 16, 24, 32, 48, 64, 96. Sin valores arbitrarios.
 - **Radio:** 12px inputs/botones, 20px tarjetas, full (`9999px`) avatares/pills.
+- **Superficies:** toda tarjeta usa la clase `.surface` de `globals.css` — nunca se repite
+  `rounded-2xl border border-border bg-card` en un componente. En claro la separación la da la
+  sombra (`--shadow-raised`), porque `--card` es blanco igual que el fondo; en oscuro una sombra no
+  se ve sobre negro, así que `.surface` la anula y manda el borde. Decisión del 2026-08-07
+  ("dirección B"): una tarjeta gris sobre fondo blanco se lee hundida, una blanca elevada se lee
+  como un objeto.
 - **Elevación:** `0 1px 2px rgba(0,0,0,.04)` reposo, `0 8px 24px rgba(0,0,0,.08)` flotante; hover
   en tarjetas puede subir un nivel de elevación con una transición suave.
 - **Movimiento:** 200-250ms, `cubic-bezier(.4,0,.2,1)`. Solo `transform`/`opacity`. Respeta

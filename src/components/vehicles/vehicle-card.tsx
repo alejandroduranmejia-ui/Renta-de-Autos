@@ -33,7 +33,9 @@ export function VehicleCard({
 
   return (
     <Link href={`/vehiculos/${vehicle.id}`} className="group block">
-      <Card className="gap-0 overflow-hidden py-0 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-lg">
+      {/* `rounded-2xl` y sin anillo: en claro el borde competía con la sombra y devolvía el
+          aspecto encajonado. La foto define la tarjeta; la elevación la separa de la página. */}
+      <Card className="gap-0 overflow-hidden rounded-2xl py-0 ring-0 transition-all duration-200 group-hover:-translate-y-1 group-hover:shadow-floating dark:ring-1">
         <div className="relative aspect-[4/3] overflow-hidden bg-muted">
           {vehicle.photoUrl ? (
             <Image

@@ -55,7 +55,7 @@ export default async function ReservaDetailPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="rounded-2xl border border-border bg-card p-5">
+      <div className="surface p-5">
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-semibold text-foreground">

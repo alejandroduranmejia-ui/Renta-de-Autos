@@ -16,6 +16,9 @@ const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 export function ThemeToggle({ className }: { className?: string }) {
   function toggle() {
     const isDark = document.documentElement.classList.toggle("dark");
+    // La alternativa que sugiere la regla, la API CookieStore, no existe en Safari ni en Firefox
+    // — y este proyecto imita a apple.com, así que Safari es un navegador de primera clase aquí.
+    // biome-ignore lint/suspicious/noDocumentCookie: CookieStore no está en Safari ni Firefox.
     document.cookie = `theme=${isDark ? "dark" : "light"}; path=/; max-age=${ONE_YEAR_SECONDS}; samesite=lax`;
   }
 

@@ -174,7 +174,7 @@ export default async function VehiculosPage({
             : "Todavía no hay vehículos publicados."}
         </p>
       ) : (
-        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
           {page.items.map((vehicle) => (
             <li key={vehicle.id}>
               <VehicleCard vehicle={vehicle} tripDates={tripDates} />

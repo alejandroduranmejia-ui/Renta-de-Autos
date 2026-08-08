@@ -70,7 +70,7 @@ export function VehicleSearchBar({
     <form
       action="/vehiculos"
       method="get"
-      className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-4"
+      className="flex flex-col gap-4 surface p-4"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
         <div className="flex flex-1 flex-col gap-1.5">
