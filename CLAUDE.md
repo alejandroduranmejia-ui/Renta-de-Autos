@@ -132,6 +132,22 @@ un degradado sutil de marca (blobs difuminados en `--primary`) en secciones "her
 tipografía de mayor escala en esos mismos momentos. Sigue sin haber iconografía ilustrativa fuera
 de `lucide-react`, y el resto del sistema (colores, radios, un solo acento azul) no cambia.
 
+## Deployment
+
+**El cron corre una vez al día (`0 7 * * *`) porque el plan de Vercel es Hobby, que no admite más.**
+Un `*/15 * * * *` hace que Vercel **rechace el despliegue completo** — no es una degradación
+silenciosa, el build falla. Eso dejó la auditoría de seguridad del 2026-08-08 sin desplegar durante
+horas, y el fallo era invisible porque el filtro de estado del panel ocultaba los despliegues en
+error.
+
+Que corra a diario es aceptable: la limpieza que de verdad protege al usuario es la liberación
+oportunista de `releaseExpiredHoldsForVehicle`, que se ejecuta dentro de `createBookingCore` en
+cada intento de reserva. El cron solo barre lo que quede. Si el proyecto pasa a Pro, subir a
+`*/15` vale la pena.
+
+`vercel.json` es JSON estricto: **no** admite claves de comentario tipo `_comment` dentro de
+`crons`. Cualquier nota va aquí.
+
 ## Environment
 
 | Variable | Required | Used by | Source |
