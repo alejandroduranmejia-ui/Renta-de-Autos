@@ -96,11 +96,15 @@ async function seed() {
     status: "active",
   });
 
-  await db.insert(vehiclePhotos).values({
-    vehicleId: VEHICLE_ID,
-    storagePath: "vehicle-photos/seed-1.jpg",
-    position: 0,
-  });
+  // `storagePath` es la ruta DENTRO del bucket, sin el nombre del bucket: `getPublicPhotoUrl`
+  // ya llama a `.from("vehicle-photos")`. Con el prefijo puesto aquí la URL salía como
+  // `/vehicle-photos/vehicle-photos/seed-1.jpg` y la foto del seed nunca cargó — por eso todas
+  // las fichas se veían con un rectángulo gris en vez de una imagen.
+  await db.insert(vehiclePhotos).values([
+    { vehicleId: VEHICLE_ID, storagePath: "seed-1.jpg", position: 0 },
+    { vehicleId: VEHICLE_ID, storagePath: "seed-2.jpg", position: 1 },
+    { vehicleId: VEHICLE_ID, storagePath: "seed-3.jpg", position: 2 },
+  ]);
 
   await db.insert(vehicleDocuments).values([
     {

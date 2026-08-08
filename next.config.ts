@@ -38,6 +38,15 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.supabase.co" },
       { protocol: "http", hostname: "127.0.0.1", port: "54321" },
     ],
+    // Next.js 16 bloquea que el optimizador descargue de cualquier host que resuelva a una IP
+    // privada — una defensa contra SSRF. Eso hace que el `remotePatterns` de 127.0.0.1 de arriba
+    // sea inútil por sí solo: en desarrollo TODA foto de vehículo fallaba con
+    // `resolved to private ip`, y por eso las fichas se veían siempre con el recuadro gris.
+    //
+    // Se activa SOLO en desarrollo. En producción la protección queda intacta: ahí el bucket vive
+    // en un host público de Supabase y nada debería pedirle al servidor que descargue de una red
+    // interna.
+    dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
