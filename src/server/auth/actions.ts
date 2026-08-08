@@ -4,11 +4,25 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { checkAndIncrement } from "@/lib/rate-limit";
+import { safeNextPath } from "@/lib/safe-redirect";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
-const credentialsSchema = z.object({
+// Dos esquemas a propósito. El de INICIO DE SESIÓN no puede endurecerse: si exigiera más
+// caracteres que los que tenía la cuenta al crearse, dejaría fuera a los usuarios existentes de
+// su propia cuenta. La longitud mínima solo tiene sentido al REGISTRARSE, que es cuando de verdad
+// se elige la contraseña (auditoría del 2026-08-08).
+const signInSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6),
+  password: z.string().min(1),
+  next: z.string().optional(),
+});
+
+// 10 caracteres para una plataforma que custodia cédulas, pólizas y medios de pago. Sin reglas de
+// composición (mayúsculas/símbolos): la guía actual del NIST las desaconseja porque empujan a
+// contraseñas cortas y predecibles.
+const signUpSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(10),
   fullName: z.string().min(1).optional(),
   next: z.string().optional(),
 });
@@ -28,14 +42,14 @@ async function clientIp() {
 }
 
 export async function signInWithPasswordAction(formData: FormData) {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
-    next: formData.get("next") ?? undefined,
+    next: safeNextPath(formData.get("next")),
   });
   if (!parsed.success) {
     redirect(
-      `/iniciar-sesion?error=datos_invalidos&next=${encodeURIComponent((formData.get("next") as string) || "/")}`,
+      `/iniciar-sesion?error=datos_invalidos&next=${encodeURIComponent(safeNextPath(formData.get("next")))}`,
     );
   }
 
@@ -47,7 +61,7 @@ export async function signInWithPasswordAction(formData: FormData) {
   const limit = await checkAndIncrement(`login:${ip}`, 10, 60);
   if (!limit.allowed) {
     redirect(
-      `/iniciar-sesion?error=demasiados_intentos&next=${encodeURIComponent(parsed.data.next || "/")}`,
+      `/iniciar-sesion?error=demasiados_intentos&next=${encodeURIComponent(safeNextPath(parsed.data.next))}`,
     );
   }
 
@@ -59,19 +73,19 @@ export async function signInWithPasswordAction(formData: FormData) {
 
   if (error) {
     redirect(
-      `/iniciar-sesion?error=credenciales_invalidas&next=${encodeURIComponent(parsed.data.next || "/")}`,
+      `/iniciar-sesion?error=credenciales_invalidas&next=${encodeURIComponent(safeNextPath(parsed.data.next))}`,
     );
   }
 
-  redirect(parsed.data.next || "/");
+  redirect(safeNextPath(parsed.data.next));
 }
 
 export async function signUpWithPasswordAction(formData: FormData) {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
     fullName: formData.get("fullName"),
-    next: formData.get("next") ?? undefined,
+    next: safeNextPath(formData.get("next")),
   });
   if (!parsed.success) {
     redirect("/registro?error=datos_invalidos");
@@ -90,7 +104,7 @@ export async function signUpWithPasswordAction(formData: FormData) {
     password: parsed.data.password,
     options: {
       data: { full_name: parsed.data.fullName },
-      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(parsed.data.next || "/")}`,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(safeNextPath(parsed.data.next))}`,
     },
   });
 
@@ -102,7 +116,7 @@ export async function signUpWithPasswordAction(formData: FormData) {
 }
 
 export async function signInWithGoogleAction(formData: FormData) {
-  const next = (formData.get("next") as string) || "/";
+  const next = safeNextPath(formData.get("next"));
   const supabase = await createSupabaseServerClient();
   const origin = await originFromHeaders();
 

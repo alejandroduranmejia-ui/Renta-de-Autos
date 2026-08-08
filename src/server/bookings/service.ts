@@ -41,6 +41,10 @@ export async function createBookingCore(
     );
   }
 
+  // Antes de chocar contra el exclusion constraint: si el slot solo está tomado por un hold que
+  // ya venció, liberarlo aquí convierte un "no disponible" falso en una reserva válida.
+  await releaseExpiredHoldsForVehicle(params.vehicleId, now);
+
   // Misma cotización que ve el arrendatario en la ficha — una sola fórmula (src/lib/pricing.ts).
   const quote = quoteBooking({
     dailyPriceCents: vehicle.dailyPriceCents,
@@ -99,6 +103,33 @@ export async function cancelBookingCore(actor: Actor, bookingId: string) {
     .where(eq(bookings.id, bookingId))
     .returning();
   return updated;
+}
+
+/** Libera los holds vencidos de UN vehículo. Se llama justo antes de intentar reservarlo.
+ *
+ *  El cron de `/api/cron/expirar-holds` hace la limpieza general, pero hacer que la
+ *  disponibilidad dependa de que un trabajo programado haya corrido es frágil: si el cron falla,
+ *  o el plan de Vercel solo permite ejecutarlo una vez al día, un hold sin pagar sigue reteniendo
+ *  el vehículo y el exclusion constraint rechaza a cualquier otro arrendatario. Eso es una
+ *  denegación de servicio gratuita contra el dueño (auditoría del 2026-08-08).
+ *
+ *  Con esto, el peor caso de un cron caído es una fecha que se ve ocupada en el calendario, no una
+ *  reserva imposible. */
+export async function releaseExpiredHoldsForVehicle(
+  vehicleId: string,
+  now: Date = new Date(),
+) {
+  return db
+    .update(bookings)
+    .set({ status: "cancelled" })
+    .where(
+      and(
+        eq(bookings.vehicleId, vehicleId),
+        eq(bookings.status, "held"),
+        lt(bookings.holdExpiresAt, now),
+      ),
+    )
+    .returning();
 }
 
 // Llamado por el cron del paso 14 — expira los holds vencidos sin pago, liberando el slot (el

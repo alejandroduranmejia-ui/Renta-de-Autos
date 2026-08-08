@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { checkAndIncrement } from "@/lib/rate-limit";
+import { UploadValidationError } from "@/lib/upload-validation";
 import { FEATURE_KEYS } from "@/lib/vehicle-features";
 import {
   FUEL_TYPE_KEYS,
@@ -94,6 +96,14 @@ export async function activateVehicle(formData: FormData) {
 
 export async function addVehiclePhoto(formData: FormData) {
   const actor = await requireUser();
+  // Subidas de foto: 30 archivos cada 10 minutos por usuario. El input es `multiple`, así que
+  // el límite cuenta envíos, no archivos — suficiente para un lote grande, no para un bucle.
+  const rate = await checkAndIncrement(`fotos:${actor.id}`, 30, 600);
+  if (!rate.allowed) {
+    redirect(
+      `/mis-vehiculos/${z.string().uuid().parse(formData.get("vehicleId"))}/editar?error=demasiados_intentos`,
+    );
+  }
   const vehicleId = z.string().uuid().parse(formData.get("vehicleId"));
   // El input es `multiple`: activar exige MIN_PHOTOS_TO_ACTIVATE fotos y subirlas de a una era
   // fricción pura.
@@ -105,12 +115,19 @@ export async function addVehiclePhoto(formData: FormData) {
   }
   // En serie: `addVehiclePhotoCore` calcula `position` contando las fotos existentes, así que en
   // paralelo dos subidas se asignarían la misma posición.
-  for (const file of files) {
-    await addVehiclePhotoCore(actor, vehicleId, {
-      file: Buffer.from(await file.arrayBuffer()),
-      fileName: file.name,
-      contentType: file.type,
-    });
+  try {
+    for (const file of files) {
+      await addVehiclePhotoCore(actor, vehicleId, {
+        file: Buffer.from(await file.arrayBuffer()),
+        fileName: file.name,
+        contentType: file.type,
+      });
+    }
+  } catch (err) {
+    if (err instanceof UploadValidationError) {
+      redirect(`/mis-vehiculos/${vehicleId}/editar?error=${err.code}`);
+    }
+    throw err;
   }
   redirect(`/mis-vehiculos/${vehicleId}/editar`);
 }
@@ -125,13 +142,20 @@ export async function addVehicleDocument(formData: FormData) {
   if (!file || file.size === 0) {
     redirect(`/mis-vehiculos/${vehicleId}/editar?error=archivo_requerido`);
   }
-  await addVehicleDocumentCore(actor, vehicleId, {
-    documentType,
-    file: Buffer.from(await file.arrayBuffer()),
-    fileName: file.name,
-    contentType: file.type,
-    expiresAt: (formData.get("expiresAt") as string) || undefined,
-  });
+  try {
+    await addVehicleDocumentCore(actor, vehicleId, {
+      documentType,
+      file: Buffer.from(await file.arrayBuffer()),
+      fileName: file.name,
+      contentType: file.type,
+      expiresAt: (formData.get("expiresAt") as string) || undefined,
+    });
+  } catch (err) {
+    if (err instanceof UploadValidationError) {
+      redirect(`/mis-vehiculos/${vehicleId}/editar?error=${err.code}`);
+    }
+    throw err;
+  }
   redirect(`/mis-vehiculos/${vehicleId}/editar`);
 }
 

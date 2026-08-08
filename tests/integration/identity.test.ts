@@ -2,6 +2,14 @@ import { eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
 import { db } from "@/lib/db";
 import { auditLog, identityVerifications, users } from "@/lib/db/schema";
+import { UploadValidationError } from "@/lib/upload-validation";
+
+// Firma real de un JPEG. Desde la auditoría del 2026-08-08 el contenido se inspecciona de verdad,
+// así que un buffer de texto arbitrario ya no pasa por imagen.
+const JPEG_FIXTURE = Buffer.from([
+  0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
+]);
+
 import {
   ForbiddenError,
   reviewVerificationCore,
@@ -37,7 +45,7 @@ describe("identity verification", () => {
       { id: userId },
       {
         documentType: "cedula",
-        file: Buffer.from("fake-image-bytes"),
+        file: JPEG_FIXTURE,
         fileName: "cedula.jpg",
         contentType: "image/jpeg",
       },
@@ -45,6 +53,24 @@ describe("identity verification", () => {
 
     expect(created.status).toBe("pending");
     expect(created.filePath).toMatch(new RegExp(`^identity/${userId}/`));
+    // La extensión sale del contenido, no del nombre del archivo.
+    expect(created.filePath).toMatch(/\.jpg$/);
+  });
+
+  it("rechaza un archivo que no es realmente una imagen ni un PDF", async () => {
+    // Antes de la auditoría del 2026-08-08 esto se aceptaba: bastaba con declarar
+    // `contentType: "image/jpeg"` y llamarlo `.jpg`.
+    await expect(
+      submitVerificationCore(
+        { id: userId },
+        {
+          documentType: "cedula",
+          file: Buffer.from("<html><script>alert(1)</script></html>", "ascii"),
+          fileName: "cedula.jpg",
+          contentType: "image/jpeg",
+        },
+      ),
+    ).rejects.toThrow(UploadValidationError);
   });
 
   it("rejects a non-admin trying to review, and writes nothing", async () => {

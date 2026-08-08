@@ -71,8 +71,15 @@ export default async function RegistroPage({
                 type="password"
                 name="password"
                 required
-                minLength={6}
+                minLength={10}
+                aria-describedby="password-hint"
               />
+              {/* El servidor exige lo mismo (signUpSchema); esto solo evita que el usuario
+                  descubra el requisito después de enviar el formulario. */}
+              <p id="password-hint" className="text-xs text-muted-foreground">
+                Mínimo 10 caracteres. Una frase que recuerdes es mejor que algo
+                corto y complicado.
+              </p>
             </div>
             <Button type="submit" className="mt-2 h-10">
               Crear cuenta

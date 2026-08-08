@@ -1,7 +1,9 @@
 import { eq } from "drizzle-orm";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { vehicleDocuments, vehicles } from "@/lib/db/schema";
+import { openDocument } from "@/server/identity/mutations";
 import { reviewVehicleDocument } from "@/server/vehicles/mutations";
 
 export default async function AdminVehiculosPage() {
@@ -44,6 +46,21 @@ export default async function AdminVehiculosPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                {/* Misma corrección que en /admin/verificaciones: aprobar una póliza sin poder
+                    abrirla no es una revisión. */}
+                <form action={openDocument} target="_blank" rel="noopener">
+                  <input type="hidden" name="filePath" value={d.filePath} />
+                  <input
+                    type="hidden"
+                    name="targetType"
+                    value="vehicle_document"
+                  />
+                  <input type="hidden" name="targetId" value={d.id} />
+                  <Button type="submit" size="sm" variant="outline">
+                    <Eye className="size-4" />
+                    Ver documento
+                  </Button>
+                </form>
                 <form action={reviewVehicleDocument}>
                   <input type="hidden" name="documentId" value={d.id} />
                   <input type="hidden" name="decision" value="approved" />

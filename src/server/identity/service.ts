@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auditLog, identityVerifications } from "@/lib/db/schema";
 import { uploadPrivate } from "@/lib/storage";
+import { validateUpload } from "@/lib/upload-validation";
 
 // Capa de servicio — sin awareness de HTTP/Next.js (nunca importa cookies()/headers()), toma un
 // actor ya resuelto y datos tipados. Esto es lo que hace testeable la lógica real sin un request
@@ -10,8 +11,6 @@ import { uploadPrivate } from "@/lib/storage";
 // requireAdmin() y delega aquí.
 
 export class ForbiddenError extends Error {}
-
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 export async function submitVerificationCore(
   actor: { id: string },
@@ -22,20 +21,11 @@ export async function submitVerificationCore(
     contentType: string;
   },
 ) {
-  if (params.file.byteLength === 0) {
-    throw new Error("FILE_EMPTY");
-  }
-  if (params.file.byteLength > MAX_FILE_BYTES) {
-    throw new Error("FILE_TOO_LARGE");
-  }
-
-  const extension = params.fileName.split(".").pop() ?? "jpg";
+  // La extensión y el tipo salen del CONTENIDO real del archivo, no del nombre ni del
+  // `Content-Type` que manda el cliente — ambos eran manipulables (auditoría del 2026-08-08).
+  const { extension, mime } = validateUpload(params.file, { allowPdf: true });
   const path = `identity/${actor.id}/${Date.now()}.${extension}`;
-  await uploadPrivate(
-    path,
-    params.file,
-    params.contentType || "application/octet-stream",
-  );
+  await uploadPrivate(path, params.file, mime);
 
   const [created] = await db
     .insert(identityVerifications)

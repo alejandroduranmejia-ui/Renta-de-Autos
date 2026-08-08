@@ -4,8 +4,9 @@ import { eq } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { bookings, messages, vehicles } from "@/lib/db/schema";
+import { checkAndIncrement } from "@/lib/rate-limit";
 import { requireUser } from "@/server/auth/guards";
-import { NotFoundError } from "@/server/errors";
+import { NotFoundError, TooManyRequestsError } from "@/server/errors";
 
 const sendSchema = z.object({
   bookingId: z.string().uuid(),
@@ -21,6 +22,16 @@ export async function sendMessage(formData: FormData) {
     bookingId: formData.get("bookingId"),
     body: formData.get("body"),
   });
+
+  // Por usuario, no por IP: aquí ya hay sesión, así que la identidad es más fiable que la IP y no
+  // castiga a dos usuarios detrás del mismo NAT. 30/min deja conversar con holgura y corta el
+  // llenado automatizado del hilo (auditoría del 2026-08-08).
+  const limit = await checkAndIncrement(`mensajes:${actor.id}`, 30, 60);
+  if (!limit.allowed) {
+    throw new TooManyRequestsError(
+      "Estás enviando mensajes muy rápido. Espera un momento.",
+    );
+  }
 
   const [row] = await db
     .select({ renterId: bookings.renterId, ownerId: vehicles.ownerId })

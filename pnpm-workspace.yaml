@@ -1,3 +1,14 @@
+# Transitivas con avisos de seguridad que Next.js 16.2.12 arrastra pinneadas. `sharp` es la que
+# importa de verdad: es lo que el optimizador de imágenes usa para procesar CADA foto que sube un
+# dueño, así que una vulnerabilidad de libvips ahí se alcanza con datos de usuario
+# (auditoría del 2026-08-08). Las otras dos son de tiempo de build.
+#
+# Va aquí y no en package.json: pnpm 11 dejó de leer el campo `pnpm.overrides` de package.json.
+overrides:
+  sharp: '>=0.35.3'
+  postcss: '>=8.5.23'
+  nanoid: '>=3.3.17'
+
 allowBuilds:
   '@sentry/cli': true
   esbuild: true

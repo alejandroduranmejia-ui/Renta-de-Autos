@@ -88,6 +88,37 @@ describe("booking concurrency", () => {
     expect(rebooked.status).toBe("held");
   });
 
+  it("libera un hold vencido al reservar, sin esperar a que corra el cron", async () => {
+    // Auditoría del 2026-08-08: la disponibilidad no puede depender de que un trabajo programado
+    // haya corrido. Si el cron falla —o el plan solo permite ejecutarlo una vez al día— un hold
+    // sin pagar retiene el vehículo y el exclusion constraint rechaza a cualquier otro
+    // arrendatario. Denegación de servicio gratuita contra el dueño.
+    const startsAt = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+    const endsAt = new Date(startsAt.getTime() + 24 * 60 * 60 * 1000);
+
+    const held = await createBookingCore(
+      { id: renterId },
+      { vehicleId, startsAt, endsAt },
+    );
+    await db
+      .update(bookings)
+      .set({ holdExpiresAt: new Date(Date.now() - 1000) })
+      .where(eq(bookings.id, held.id));
+
+    // Sin llamar a releaseExpiredHoldsCore(): createBookingCore debe encargarse solo.
+    const rebooked = await createBookingCore(
+      { id: renterId },
+      { vehicleId, startsAt, endsAt },
+    );
+    expect(rebooked.status).toBe("held");
+
+    const [previous] = await db
+      .select()
+      .from(bookings)
+      .where(eq(bookings.id, held.id));
+    expect(previous.status).toBe("cancelled");
+  });
+
   it("lets a renter cancel their own booking before it is confirmed, without deleting the row", async () => {
     const startsAt = new Date(Date.now() + 40 * 24 * 60 * 60 * 1000);
     const endsAt = new Date(startsAt.getTime() + 24 * 60 * 60 * 1000);

@@ -17,7 +17,11 @@ import { submitVerification } from "@/server/identity/mutations";
 
 const ERROR_MESSAGES: Record<string, string> = {
   archivo_requerido: "Sube una foto de tu documento.",
-  archivo_muy_grande: "El archivo no puede pesar más de 10MB.",
+  archivo_vacio: "El archivo está vacío.",
+  archivo_muy_grande: "El archivo supera los 10 MB.",
+  tipo_no_permitido:
+    "Solo se aceptan imágenes JPG, PNG, WEBP o un PDF. Revisamos el contenido real del archivo, no su nombre.",
+  demasiados_intentos: "Demasiados envíos seguidos. Espera unos minutos.",
 };
 
 const STATUS_VARIANT: Record<

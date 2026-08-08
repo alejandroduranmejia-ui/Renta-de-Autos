@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { db } from "@/lib/db";
 import { identityVerifications, users } from "@/lib/db/schema";
-import { reviewVerification } from "@/server/identity/mutations";
+import { openDocument, reviewVerification } from "@/server/identity/mutations";
 
 export default async function AdminVerificacionesPage() {
   const pending = await db
@@ -41,6 +42,21 @@ export default async function AdminVerificacionesPage() {
                 </p>
               </div>
               <div className="flex gap-2">
+                {/* Sin esto el admin aprobaba sin ver nada. Abre en una pestaña nueva con una URL
+                    firmada de 60 segundos, y el acceso queda en `audit_log`. */}
+                <form action={openDocument} target="_blank" rel="noopener">
+                  <input type="hidden" name="filePath" value={v.filePath} />
+                  <input
+                    type="hidden"
+                    name="targetType"
+                    value="identity_verification"
+                  />
+                  <input type="hidden" name="targetId" value={v.id} />
+                  <Button type="submit" size="sm" variant="outline">
+                    <Eye className="size-4" />
+                    Ver documento
+                  </Button>
+                </form>
                 <form action={reviewVerification}>
                   <input type="hidden" name="verificationId" value={v.id} />
                   <input type="hidden" name="decision" value="approved" />

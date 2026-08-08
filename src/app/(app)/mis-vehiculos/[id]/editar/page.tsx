@@ -44,6 +44,11 @@ const ERROR_MESSAGES: Record<string, string> = {
     "Tu cuenta de pagos todavía no está lista para recibir transferencias.",
   photos_missing: `Necesitas al menos ${MIN_PHOTOS_TO_ACTIVATE} fotos para activar la publicación.`,
   archivo_requerido: "Selecciona un archivo.",
+  archivo_vacio: "El archivo está vacío.",
+  archivo_muy_grande: "El archivo supera los 10 MB.",
+  tipo_no_permitido:
+    "Solo se aceptan imágenes JPG, PNG o WEBP — y PDF para los documentos. Revisamos el contenido real del archivo, no su nombre.",
+  demasiados_intentos: "Demasiadas subidas seguidas. Espera unos minutos.",
 };
 
 const DOCUMENT_STATUS_VARIANT: Record<

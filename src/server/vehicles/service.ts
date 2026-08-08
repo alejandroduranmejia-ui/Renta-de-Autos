@@ -10,6 +10,7 @@ import {
   vehicles,
 } from "@/lib/db/schema";
 import { uploadPrivate, uploadPublicPhoto } from "@/lib/storage";
+import { validateUpload } from "@/lib/upload-validation";
 import { ConflictError } from "@/server/bookings/service";
 import { ForbiddenError, NotFoundError } from "@/server/errors";
 
@@ -123,13 +124,12 @@ export async function addVehiclePhotoCore(
   params: { file: Buffer; fileName: string; contentType: string },
 ) {
   await getOwnedVehicleOrThrow(actor, vehicleId);
-  const extension = params.fileName.split(".").pop() ?? "jpg";
+  // Bucket PÚBLICO: sin esta validación, un dueño verificado podía subir un archivo HTML
+  // declarándolo `image/jpeg` y obtener una URL pública que lo sirviera desde el dominio de
+  // Supabase (auditoría del 2026-08-08). Aquí no se aceptan PDF: una foto es una foto.
+  const { extension, mime } = validateUpload(params.file);
   const path = `${vehicleId}/${Date.now()}.${extension}`;
-  await uploadPublicPhoto(
-    path,
-    params.file,
-    params.contentType || "image/jpeg",
-  );
+  await uploadPublicPhoto(path, params.file, mime);
 
   const existing = await db
     .select()
@@ -155,13 +155,10 @@ export async function addVehicleDocumentCore(
   },
 ) {
   await getOwnedVehicleOrThrow(actor, vehicleId);
-  const extension = params.fileName.split(".").pop() ?? "jpg";
+  // Una póliza o tarjeta de circulación llega legítimamente escaneada en PDF.
+  const { extension, mime } = validateUpload(params.file, { allowPdf: true });
   const path = `vehicle-docs/${vehicleId}/${params.documentType}-${Date.now()}.${extension}`;
-  await uploadPrivate(
-    path,
-    params.file,
-    params.contentType || "application/octet-stream",
-  );
+  await uploadPrivate(path, params.file, mime);
 
   const [created] = await db
     .insert(vehicleDocuments)
